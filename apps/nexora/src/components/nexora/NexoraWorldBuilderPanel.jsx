@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Cloud, Droplets, Layers3, Plus, RefreshCw, Save, Sun, Trash2 } from "lucide-react";
+import { isWorldSnapshotPending, readWorldSnapshot, writeWorldSnapshot } from "./localWorldStorage.js";
 
 const surface = "rounded-2xl border border-[#20334B] bg-[#101B2C]";
 const defaultWorld = (project) => ({
@@ -14,61 +15,125 @@ const defaultWorld = (project) => ({
 const input = "mt-1 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/60";
 const label = "block text-[10px] font-semibold text-slate-400";
 
-export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexoraAuthFetch,onNotice,userId="anonymous"}) {
+export default function NexoraWorldBuilderPanel({project,cloudProjectActive,localAgentFetch,onNotice,userId="anonymous"}) {
   const [document,setDocument] = useState(()=>defaultWorld(project));
   const [loading,setLoading] = useState(false);
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState("");
   const [loaded,setLoaded] = useState(false);
+  const [storageState,setStorageState] = useState("unsaved");
   const localWorldKey = "nexora.world-document.v1:"+String(userId||"anonymous")+":"+String(project?.id||"no-project");
+  const pendingWorldKey = localWorldKey+":pending-local-agent";
 
-  const loadWorld = useCallback(async ()=>{
-    if (!project?._remoteVersion || !cloudProjectActive) {
-      setLoading(true);
-      setError("");
-      try {
-        const saved = localStorage.getItem(localWorldKey);
-        const base = defaultWorld(project);
-        const payload = saved ? JSON.parse(saved) : null;
-        setDocument(payload && typeof payload === "object" ? {
-          ...base,
-          ...payload,
-          world:{...base.world,...(payload.world||{})},
-          objects:Array.isArray(payload.objects)?payload.objects:[],
-          terrain_edits:Array.isArray(payload.terrain_edits)?payload.terrain_edits:[],
-        } : base);
-        setLoaded(Boolean(payload));
-      } catch (e) {
-        setDocument(defaultWorld(project));
-        setLoaded(false);
-        setError(e.message || "Local world document could not be read.");
-      } finally { setLoading(false); }
-      return;
-    }
+  const normalizeDocument = (payload) => {
+    const base = defaultWorld(project);
+    return {
+      ...base,
+      ...(payload || {}),
+      seed: Number(payload?.seed ?? base.seed),
+      world: { ...base.world, ...(payload?.world || {}) },
+      objects: Array.isArray(payload?.objects) ? payload.objects : [],
+      terrain_edits: Array.isArray(payload?.terrain_edits) ? payload.terrain_edits : [],
+      sun_angle: Number(payload?.sun_angle ?? base.sun_angle),
+      fog: payload?.fog ?? base.fog,
+      water_level: Number(payload?.water_level ?? base.water_level),
+    };
+  };
+
+  const loadWorld = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await nexoraAuthFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world", {headers:{Accept:"application/json"},cache:"no-store"});
-      const payload = await response.json().catch(()=>({}));
-      if (!response.ok) throw new Error(payload?.detail || "World document could not be loaded.");
-      const base = defaultWorld(project);
-      setDocument({
-        ...base,
-        ...payload,
-        seed:Number(payload.seed ?? base.seed),
-        world:{...base.world,...(payload.world||{})},
-        objects:Array.isArray(payload.objects)?payload.objects:[],
-        terrain_edits:Array.isArray(payload.terrain_edits)?payload.terrain_edits:[],
-        sun_angle:Number(payload.sun_angle ?? base.sun_angle),
-        fog:payload.fog ?? base.fog,
-        water_level:Number(payload.water_level ?? base.water_level),
+      const cached = readWorldSnapshot(localStorage, localWorldKey);
+      const pending = isWorldSnapshotPending(localStorage, pendingWorldKey);
+
+      // Browser-only projects never attempt a cloud or Local Agent request.
+      if (!project?._remoteVersion) {
+        setDocument(cached || defaultWorld(project));
+        setLoaded(Boolean(cached));
+        setStorageState(cached ? "browser_saved" : "unsaved");
+        return;
+      }
+
+      // A disconnected Local Agent must not replace the last known document
+      // with defaults. Pending edits are retained until the paired agent returns.
+      if (!cloudProjectActive) {
+        setDocument(cached || defaultWorld(project));
+        setLoaded(Boolean(cached));
+        setStorageState(pending ? "pending" : cached ? "cached" : "agent_offline");
+        if (pending) setError("The Local Agent is disconnected. Your latest World Builder changes remain saved in this browser and will be retried when the agent reconnects.");
+        else if (cached) setError("The Local Agent is disconnected. Showing the last locally cached WorldDocument; new edits can still be saved here.");
+        else setError("Connect the NEXORA Local Agent to load this project's WorldDocument.");
+        return;
+      }
+
+      if (pending && cached) {
+        setDocument(cached);
+        setLoaded(true);
+        setStorageState("pending");
+        try {
+          if (typeof localAgentFetch !== "function") throw new Error("The NEXORA Local Agent transport is unavailable.");
+          const replay = await localAgentFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world", {
+            method:"PUT",
+            headers:{"Content-Type":"application/json",Accept:"application/json"},
+            body:JSON.stringify(cached),
+          });
+          const replayPayload = await replay.json().catch(()=>({}));
+          if (!replay.ok) {
+            const detail = replayPayload?.detail;
+            throw new Error(typeof detail === "string" ? detail : detail?.message || "Pending WorldDocument changes could not be transferred to the Local Agent.");
+          }
+          if (!replayPayload.document || typeof replayPayload.document !== "object") {
+            throw new Error("The Local Agent returned an invalid WorldDocument save response.");
+          }
+          const restored = normalizeDocument(replayPayload.document);
+          writeWorldSnapshot(localStorage, localWorldKey, pendingWorldKey, restored, false);
+          setDocument(restored);
+          setLoaded(true);
+          setStorageState("device_saved");
+          onNotice?.("Pending World Builder changes were saved to the paired computer.");
+          return;
+        } catch (replayError) {
+          setError((replayError.message || "Pending WorldDocument synchronization failed.")+" Your browser recovery copy has been preserved.");
+          setStorageState("pending");
+          return;
+        }
+      }
+
+      if (typeof localAgentFetch !== "function") throw new Error("The NEXORA Local Agent transport is unavailable.");
+      const response = await localAgentFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world", {
+        headers:{Accept:"application/json"},
+        cache:"no-store",
       });
+      const payload = await response.json().catch(()=>({}));
+      if (!response.ok) {
+        const detail = payload?.detail;
+        throw new Error(typeof detail === "string" ? detail : detail?.message || "World document could not be loaded from the Local Agent.");
+      }
+      const normalized = normalizeDocument(payload);
+      setDocument(normalized);
       setLoaded(true);
-    } catch (e) {
-      setError(e.message || "World document could not be loaded.");
-      setLoaded(false);
-    } finally {setLoading(false);}
-  },[project?.id,project?._remoteVersion,cloudProjectActive,nexoraAuthFetch,localWorldKey]);
+      setStorageState("device_saved");
+      try { writeWorldSnapshot(localStorage, localWorldKey, pendingWorldKey, normalized, false); }
+      catch { setError("WorldDocument loaded from your computer, but the browser recovery copy could not be refreshed."); }
+    } catch (loadError) {
+      const cached = readWorldSnapshot(localStorage, localWorldKey);
+      const pending = isWorldSnapshotPending(localStorage, pendingWorldKey);
+      if (cached) {
+        setDocument(cached);
+        setLoaded(true);
+        setStorageState(pending ? "pending" : "cached");
+        setError((loadError.message || "The Local Agent is unavailable.")+" Showing the preserved browser recovery copy.");
+      } else {
+        setDocument(defaultWorld(project));
+        setLoaded(false);
+        setStorageState("agent_offline");
+        setError(loadError.message || "World document could not be loaded. No saved browser recovery copy was found.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [project?.id,project?._remoteVersion,cloudProjectActive,localAgentFetch,localWorldKey,pendingWorldKey,onNotice]);
 
   useEffect(()=>{loadWorld();},[loadWorld]);
 
@@ -79,25 +144,59 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
   const addTerrainEdit = () => setDocument(current=>({...current,terrain_edits:[...current.terrain_edits,{id:"terrain-edit-"+Date.now().toString(36),operation:"raise",x:0,z:0,radius:6,strength:2}]}));
 
   const saveWorld = async () => {
-    setSaving(true);setError("");
+    setSaving(true);
+    setError("");
     try {
-      if (!project?._remoteVersion || !cloudProjectActive) {
-        localStorage.setItem(localWorldKey,JSON.stringify(document));
+      if (!project?._remoteVersion) {
+        writeWorldSnapshot(localStorage, localWorldKey, pendingWorldKey, document, false);
         setLoaded(true);
+        setStorageState("browser_saved");
         onNotice?.("World settings and scene objects saved to this browser's local project storage.");
         return;
       }
-      const response=await nexoraAuthFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world",{
-        method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(document),
-      });
-      const payload=await response.json().catch(()=>({}));
-      if(!response.ok) throw new Error(payload?.detail || "World document could not be saved.");
-      if (!payload.document || typeof payload.document !== "object") throw new Error("World Builder received an invalid save response.");
-      setDocument(payload.document);
-      setLoaded(true);
-      onNotice?.("World settings and scene objects saved to the NEXORA cloud project.");
-    }catch(e){setError(e.message||"World save failed.");}
-    finally{setSaving(false);}
+
+      if (!cloudProjectActive || typeof localAgentFetch !== "function") {
+        writeWorldSnapshot(localStorage, localWorldKey, pendingWorldKey, document, true);
+        setLoaded(true);
+        setStorageState("pending");
+        onNotice?.("The Local Agent is unavailable. Your WorldDocument is saved in this browser and marked pending for transfer to your computer.");
+        return;
+      }
+
+      try {
+        const response = await localAgentFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world", {
+          method:"PUT",
+          headers:{"Content-Type":"application/json",Accept:"application/json"},
+          body:JSON.stringify(document),
+        });
+        const payload = await response.json().catch(()=>({}));
+        if (!response.ok) {
+          const detail = payload?.detail;
+          throw new Error(typeof detail === "string" ? detail : detail?.message || "World document could not be saved to the Local Agent.");
+        }
+        if (!payload.document || typeof payload.document !== "object") {
+          throw new Error("World Builder received an invalid Local Agent save response.");
+        }
+        const savedDocument = normalizeDocument(payload.document);
+        writeWorldSnapshot(localStorage, localWorldKey, pendingWorldKey, savedDocument, false);
+        setDocument(savedDocument);
+        setLoaded(true);
+        setStorageState("device_saved");
+        onNotice?.("World settings and scene objects saved to your paired computer's NEXORA workspace.");
+      } catch (agentError) {
+        // Preserve the exact edited document before exposing the transport/API error.
+        writeWorldSnapshot(localStorage, localWorldKey, pendingWorldKey, document, true);
+        setLoaded(true);
+        setStorageState("pending");
+        setError((agentError.message || "The Local Agent could not save this WorldDocument.")+" Your browser recovery copy is safe; retry after reconnecting the agent.");
+        onNotice?.("WorldDocument saved locally in this browser. Transfer to the paired computer is pending.");
+      }
+    } catch (storageError) {
+      setStorageState("save_error");
+      setError(storageError.message || "WorldDocument could not be saved to browser recovery storage.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if(!project) return <div className={surface+" p-6 text-center"}><h2 className="text-sm font-extrabold text-white">Select a project first</h2><p className="mt-1 text-xs text-slate-500">World Builder stores terrain settings and scene objects inside the selected project.</p></div>;
@@ -105,9 +204,10 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
   return <div className="space-y-4">
     <div className={surface+" flex flex-wrap items-center justify-between gap-3 p-4"}>
       <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300"><Layers3 size={20}/></span><div><h2 className="text-sm font-extrabold text-white">World Builder</h2><p className="mt-1 text-[10px] text-slate-500">{project.name} · persisted WorldDocument</p></div></div>
-      <div className="flex items-center gap-2"><span className={"rounded-lg px-2 py-1 text-[9px] font-bold "+(loaded?"bg-emerald-500/10 text-emerald-300":"bg-amber-500/10 text-amber-200")}>{project._remoteVersion&&cloudProjectActive?(loaded?"CLOUD WORLD LOADED":"CLOUD WORLD NOT LOADED"):(loaded?"LOCAL WORLD SAVED":"LOCAL WORLD UNSAVED")}</span><button type="button" onClick={loadWorld} disabled={loading} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-slate-300"><RefreshCw size={12} className="mr-1 inline"/> Refresh</button><button type="button" onClick={saveWorld} disabled={saving||!project} className="rounded-lg bg-cyan-400 px-3 py-2 text-[10px] font-black text-[#04111A] disabled:opacity-40"><Save size={12} className="mr-1 inline"/>{saving?"Saving…":"Save World"}</button></div>
+      <div className="flex items-center gap-2"><span className={"rounded-lg px-2 py-1 text-[9px] font-bold "+(["device_saved","browser_saved"].includes(storageState)?"bg-emerald-500/10 text-emerald-300":"bg-amber-500/10 text-amber-200")}>{storageState==="device_saved"?"LOCAL DEVICE SAVED":storageState==="browser_saved"?"BROWSER DRAFT SAVED":storageState==="pending"?"PENDING LOCAL SYNC":storageState==="cached"?"OFFLINE CACHED COPY":storageState==="agent_offline"?"LOCAL AGENT OFFLINE":storageState==="save_error"?"SAVE ERROR":"WORLD NOT SAVED"}</span><button type="button" onClick={loadWorld} disabled={loading} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-slate-300"><RefreshCw size={12} className="mr-1 inline"/> Refresh</button><button type="button" onClick={saveWorld} disabled={saving||!project} className="rounded-lg bg-cyan-400 px-3 py-2 text-[10px] font-black text-[#04111A] disabled:opacity-40"><Save size={12} className="mr-1 inline"/>{saving?"Saving…":"Save World"}</button></div>
     </div>
-    {!cloudProjectActive&&<div className="rounded-xl border border-amber-700/40 bg-amber-500/5 p-3 text-[11px] text-amber-100">This is a local project draft. World Builder can save its WorldDocument in this browser; cloud project sync is available after the project is created in the NEXORA account.</div>}
+    {!project._remoteVersion&&<div className="rounded-xl border border-amber-700/40 bg-amber-500/5 p-3 text-[11px] text-amber-100">This is a browser-only project draft. World Builder saves its WorldDocument in this browser until the project is moved into your paired computer workspace.</div>}
+    {project._remoteVersion&&!cloudProjectActive&&<div className="rounded-xl border border-amber-700/40 bg-amber-500/5 p-3 text-[11px] text-amber-100">Your paired Local Agent is currently unavailable. World Builder will use the last browser recovery copy and keep new changes pending locally; it will retry transfer when the agent reconnects.</div>}
     {loading&&<div className="text-xs text-cyan-200">Loading saved world document…</div>}
     {error&&<div role="alert" className="rounded-xl border border-rose-800/50 bg-rose-500/5 p-3 text-xs text-rose-200">{error}</div>}
 
