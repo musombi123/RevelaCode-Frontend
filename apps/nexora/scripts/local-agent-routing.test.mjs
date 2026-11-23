@@ -7,6 +7,12 @@ import {
   readWorldSnapshot,
   writeWorldSnapshot,
 } from "../src/components/nexora/localWorldStorage.js";
+import {
+  listProjectRecoveries,
+  readProjectRecovery,
+  removeProjectRecovery,
+  writeProjectRecovery,
+} from "../src/components/nexora/localProjectRecovery.js";
 
 const componentRoot = new URL("../src/components/nexora/", import.meta.url);
 const readComponent = (name) => readFile(new URL(name, componentRoot), "utf8");
@@ -99,4 +105,62 @@ test("World Builder attempts pending local recovery before loading the device do
   assert.match(worldBuilder, /Your browser recovery copy has been preserved/);
   assert.match(worldBuilder, /if \(!loaded && !recoveryCopy\)/);
   assert.match(worldBuilder, /will not queue a default document that could overwrite existing work/);
+});
+
+
+test("Local Engine routing rejects untrusted absolute and protocol-relative URLs", () => {
+  const apiBase = "https://nexora-foundry-api.onrender.com";
+  const localAgent = "http://127.0.0.1:8765";
+  assert.throws(
+    () => resolveLocalEngineUrl("https://evil.example/collect", apiBase, localAgent),
+    /untrusted external URL/,
+  );
+  assert.throws(
+    () => resolveLocalEngineUrl("//evil.example/collect", apiBase, localAgent),
+    /untrusted external URL/,
+  );
+  assert.throws(
+    () => resolveLocalEngineUrl("http://192.168.1.10:8080/collect", apiBase, localAgent),
+    /untrusted external URL/,
+  );
+  assert.equal(
+    resolveLocalEngineUrl(localAgent + "/engine/api/v1/workspace/projects/demo/world", apiBase, localAgent),
+    localAgent + "/engine/api/v1/workspace/projects/demo/world",
+  );
+});
+
+test("Local project recovery snapshots preserve pending edits without binary payloads", () => {
+  const storage = new MemoryStorage();
+  const project = {
+    id: "world-1",
+    name: "Offline World",
+    _remoteVersion: 7,
+    _pendingLocalRecovery: true,
+    scene: { objects: [{ id: "beacon", name: "Recovered beacon" }] },
+    assets: [{ id: "asset-1", name: "tree.glb", type: "glb", size: 2048, blob: new Blob(["not persisted"]) }],
+    revisions: [{ version: 1 }],
+  };
+
+  assert.equal(writeProjectRecovery(storage, "creator-1", project, { pending: true, remoteVersion: 7 }), true);
+  const recovered = readProjectRecovery(storage, "creator-1", "world-1");
+  assert.equal(recovered.pending, true);
+  assert.equal(recovered.remote_version, 7);
+  assert.equal(recovered.project.scene.objects[0].name, "Recovered beacon");
+  assert.equal(recovered.project.assets[0].name, "tree.glb");
+  assert.equal("blob" in recovered.project.assets[0], false);
+  assert.deepEqual(recovered.project.revisions, []);
+  assert.equal(listProjectRecoveries(storage, "creator-1").length, 1);
+  assert.equal(readProjectRecovery(storage, "other-user", "world-1"), null);
+
+  assert.equal(removeProjectRecovery(storage, "creator-1", "world-1"), true);
+  assert.equal(readProjectRecovery(storage, "creator-1", "world-1"), null);
+});
+
+test("project API documents omit local recovery bookkeeping", async () => {
+  const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
+  assert.match(workspace, /_pendingLocalRecovery[\s\S]*?_recoveryConflict[\s\S]*?\.\.\.document/);
+  assert.match(workspace, /writeProjectRecovery\(localStorage, storageUserId, project/);
+  assert.match(workspace, /listProjectRecoveries\(localStorage, storageUserId\)/);
+  assert.match(workspace, /expected_version: Number\(row.version \|\| 1\)/);
+  assert.match(workspace, /activeProject\?\._recoveryConflict/);
 });
