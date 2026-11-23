@@ -12,6 +12,7 @@ function withoutBinaryPayloads(project) {
   delete value._localOnly;
   delete value._pendingLocalRecovery;
   delete value._offlineRecovery;
+  delete value._recoveryConflict;
 
   // Store lightweight asset references only. Source files and binary blobs
   // remain on the paired computer or in the existing IndexedDB asset store.
