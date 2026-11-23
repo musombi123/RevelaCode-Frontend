@@ -394,9 +394,9 @@ export default function NexoraFoundryWorkspace() {
   }, []);
 
   const localEngineFetch = useCallback(async (input, options = {}) => {
+    const path = resolveLocalEngineUrl(input, API_BASE, LOCAL_AGENT_BASE);
     const token = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
     if (!token) throw new Error("Connect your computer in NEXORA > Device Lab before opening projects or starting production.");
-    const path = resolveLocalEngineUrl(input, API_BASE, LOCAL_AGENT_BASE);
     const headers = new Headers(options.headers || {});
     headers.set("Authorization", "Bearer " + token);
     headers.set("Accept", headers.get("Accept") || "application/json");
