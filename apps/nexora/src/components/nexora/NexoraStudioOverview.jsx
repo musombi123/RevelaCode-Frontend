@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Activity, ArrowRight, Box, CheckCircle2, ChevronRight, Code2, FolderOpen,
   HardDrive, Image as ImageIcon, Layers3, Music, Play, RefreshCw,
@@ -196,7 +196,7 @@ export default function NexoraStudioOverview({
     </section>
 
     <section className="nx-live-jobs-card">
-      <SectionTitle icon={Activity} action={jobs.length ? "Inspect all jobs" : undefined} onAction={() => jobs.length && setSelectedJob(jobs[0])}>Production Jobs <span className="nx-live-job-count">{activeJobList.length} active</span></SectionTitle>
+      <SectionTitle icon={Activity} action={latestJob ? "Inspect latest" : undefined} onAction={() => latestJob && setSelectedJob(latestJob)}>Production Jobs <span className="nx-live-job-count">{activeJobList.length} active</span></SectionTitle>
       {activeJobList.length ? <div className="nx-live-job-list">{activeJobList.slice(0,4).map(job => {
         const percent = Number.isFinite(Number(job.progress)) ? Math.max(0,Math.min(100,Number(job.progress))) : null;
         return <button key={job.id} type="button" className="nx-live-job-row" onClick={() => setSelectedJob(job)}>
@@ -207,7 +207,7 @@ export default function NexoraStudioOverview({
           <ChevronRight size={15}/>
         </button>;
       })}</div> : <div className="nx-live-jobs-empty">{jobs.length ? "No jobs are currently running. Select a recent job below to inspect its result." : "No production jobs yet. Jobs appear here when queued or received from the worker."}</div>}
-      {jobs.length > 0 && <div className="nx-live-job-recent"><span>Recent job</span><button type="button" onClick={() => setSelectedJob(jobs[0])}>{jobs[0].kind || "Production job"} · {String(jobs[0].state || "unknown").replaceAll("_"," ")} <ChevronRight size={13}/></button></div>}
+      {jobs.length > 0 && <div className="nx-live-job-recent"><span>Recent job</span><button type="button" onClick={() => setSelectedJob(latestJob)}>{latestJob?.kind || "Production job"} · {String(latestJob?.state || "unknown").replaceAll("_"," ")} <ChevronRight size={13}/></button></div>}
     </section>
 
     <section className="nx-pipeline-card">
