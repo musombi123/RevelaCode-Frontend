@@ -656,3 +656,28 @@ body {
  .nx-quick-actions { display: flex !important; flex-direction: column !important; align-items: stretch; }
  .nx-quick-button { min-height: 46px !important; }
 }
+
+/* Dashboard hierarchy: glance first, resume work second, actions third, details last */
+.nexora-shell aside.fixed { width: auto !important; }
+.nexora-overview > .nx-stats-grid { order: 0; }
+.nexora-overview > .nx-hero-grid { order: 1; }
+.nexora-overview > .nx-quick-actions { order: 2; }
+.nexora-overview > .nx-bottom-grid { order: 3; }
+.nexora-overview > .nx-pipeline-card { order: 4; }
+.nx-stats-grid { grid-template-columns: repeat(4,minmax(0,1fr)) !important; }
+.nx-stat-copy { min-width: 0; }
+.nx-stat-value { font-variant-numeric: tabular-nums; }
+.nx-hero-grid { align-items: stretch; }
+.nx-hero-card, .nx-health-card { min-height: 0; }
+.nx-health-checks > div { min-height: 24px; }
+.nx-recent-card, .nx-activity-card, .nx-build-card { overflow: visible !important; }
+.nx-quick-button:focus-visible, .nx-task-row:focus-visible, .nx-recent-project:focus-visible { outline: 2px solid #67e8f9; outline-offset: 2px; }
+@media (max-width: 1050px) {
+ .nx-stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+}
+@media (max-width: 520px) {
+ .nx-stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+ .nx-stat { min-height: 76px !important; padding: 10px !important; }
+ .nx-stat-value { font-size: 20px !important; }
+ .nx-sparkline { display: none; }
+}
