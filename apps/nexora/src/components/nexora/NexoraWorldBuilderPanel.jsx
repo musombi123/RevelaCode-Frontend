@@ -155,6 +155,15 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,loca
         return;
       }
 
+      const recoveryCopy = readWorldSnapshot(localStorage, localWorldKey);
+      if (!loaded && !recoveryCopy) {
+        // Do not queue a default document over an existing device project when
+        // the Local Agent never returned its current WorldDocument.
+        setStorageState("agent_offline");
+        setError("This project has no previously loaded WorldDocument or browser recovery copy. Reconnect the Local Agent and refresh before editing; NEXORA will not queue a default document that could overwrite existing work.");
+        return;
+      }
+
       if (!cloudProjectActive || typeof localAgentFetch !== "function") {
         writeWorldSnapshot(localStorage, localWorldKey, pendingWorldKey, document, true);
         setLoaded(true);
