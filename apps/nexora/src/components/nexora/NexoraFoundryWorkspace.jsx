@@ -658,7 +658,10 @@ export default function NexoraFoundryWorkspace() {
 
         // A conflict keeps the server version as the baseline, so future edits
         // cannot silently turn into an unconditional overwrite.
-        cloudBaseline.current.set(project.id, serverSerialized);
+        const recoveryBaseline = project._pendingLocalRecovery
+          ? serverSerialized
+          : JSON.stringify(workspaceProjectDocument(project));
+        cloudBaseline.current.set(project.id, recoveryBaseline);
         return project;
       }));
       if (cancelled) return;
