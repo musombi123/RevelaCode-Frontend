@@ -144,8 +144,8 @@ export default function NexoraStudioOverview({
     { id: "in_review", label: "IN REVIEW", tone: "amber" },
     { id: "done", label: "DONE", tone: "green" }
   ];
-  const latestProgress = latestJob?.progress != null && Number.isFinite(Number(latestJob.progress))
-    ? Math.max(0, Math.min(100, Number(latestJob.progress))) : null;
+  const latestProgress = latestBuild?.progress != null && Number.isFinite(Number(latestBuild.progress))
+    ? Math.max(0, Math.min(100, Number(latestBuild.progress))) : null;
   const status = latestJob?.state === "running" || latestJob?.state === "queued" || latestJob?.state === "in_progress" ? "IN PRODUCTION"
     : activeProject?.build?.lastBuildStatus ? String(activeProject.build.lastBuildStatus).replaceAll("_"," ").toUpperCase()
     : "STATUS NOT REPORTED";
@@ -155,7 +155,7 @@ export default function NexoraStudioOverview({
   return <div className="nexora-overview">
     <section className="nx-stats-grid">
       <StatCard label="Active Projects" value={String(activeProjects.length).padStart(2, "0")} detail="Non-archived projects" icon={Folder} tone="cyan" trend={makeTrend(activeProjects)}/>
-      <StatCard label={dateRange === "week" ? "Builds This Week" : dateRange === "month" ? "Builds This Month" : "Builds · All Time"} value={buildJobs.length} detail={buildJobs.length ? "Build jobs in the selected period" : "No build records in this period"} icon={Activity} tone="purple" trend={makeTrend(buildJobs)}/>
+      <StatCard label={dateRange === "week" ? "Builds · 7 Days" : dateRange === "month" ? "Builds · 30 Days" : "Builds · All Time"} value={buildJobs.length} detail={buildJobs.length ? "Build jobs in the selected period" : "No build records in this period"} icon={Activity} tone="purple" trend={makeTrend(buildJobs)}/>
       <StatCard label="Build Success" value={successRate} detail={finishedBuilds.length ? successfulBuilds + " successful · " + (finishedBuilds.length - successfulBuilds) + " failed · n=" + finishedBuilds.length : "No completed or failed builds in this period"} icon={CheckCircle2} tone="green" trend={makeTrend(buildJobs.filter(job => job.state === "completed"))}/>
       <StatCard label="Assets" value={totalAssets} detail="Assets in loaded projects" icon={HardDrive} tone="amber" trend={makeTrend(activeProjects.flatMap(project => project.assets || []))}/>
     </section>
@@ -210,7 +210,7 @@ export default function NexoraStudioOverview({
     <section className="nx-live-jobs-card">
       <SectionTitle icon={Activity} action={latestJob ? "Inspect latest" : undefined} onAction={() => latestJob && setSelectedJob(latestJob)}>Production Jobs <span className="nx-live-job-count">{activeJobList.length} active</span></SectionTitle>
       {activeJobList.length ? <div className="nx-live-job-list">{activeJobList.slice(0,4).map(job => {
-        const percent = Number.isFinite(Number(job.progress)) ? Math.max(0,Math.min(100,Number(job.progress))) : null;
+        const percent = job.progress != null && Number.isFinite(Number(job.progress)) ? Math.max(0,Math.min(100,Number(job.progress))) : null;
         return <button key={job.id} type="button" className="nx-live-job-row" onClick={() => setSelectedJob(job)}>
           <span className="nx-live-job-indicator"><Activity size={15}/></span>
           <span className="nx-live-job-copy"><strong>{job.kind || "Production job"}</strong><small>{job.message || "Waiting for worker update"} · {shortTime(getDate(job))}</small></span>
