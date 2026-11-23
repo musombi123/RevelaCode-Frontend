@@ -8,12 +8,11 @@ const NexoraDesktopFactoryPanel = lazy(() => import("./NexoraDesktopFactoryPanel
 const NexoraSceneInspector = lazy(() => import("./NexoraSceneInspector.jsx"));
 const NexoraWorldBuilderPanel = lazy(() => import("./NexoraWorldBuilderPanel.jsx"));
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
-const NexoraWorkspacePages = lazy(() => import("./NexoraWorkspacePages.jsx"));
-const NexoraProjectsPage = (props) => <NexoraWorkspacePages {...props} page="projects" />;
-const NexoraTasksPage = (props) => <NexoraWorkspacePages {...props} page="tasks" />;
-const NexoraAnalyticsPage = (props) => <NexoraWorkspacePages {...props} page="analytics" />;
-const NexoraMarketplacePage = (props) => <NexoraWorkspacePages {...props} page="marketplace" />;
-const NexoraSettingsPage = (props) => <NexoraWorkspacePages {...props} page="settings" />;
+const NexoraProjectsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraProjectsPage })));
+const NexoraTasksPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraTasksPage })));
+const NexoraAnalyticsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraAnalyticsPage })));
+const NexoraMarketplacePage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraMarketplacePage })));
+const NexoraSettingsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraSettingsPage })));
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
