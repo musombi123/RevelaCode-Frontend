@@ -226,7 +226,7 @@ export default function NexoraStudioShell({
             <div><h1 className="text-[28px] font-black leading-[32px] tracking-tight text-white">{title}</h1><p className="mt-[1px] text-[16px] leading-[20px] text-slate-400">{subtitle}</p></div>
             <div className="flex flex-wrap items-center gap-2">
               {activeView === "overview" && <label className="flex h-[38px] items-center gap-2 rounded-[9px] border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><Calendar size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">Last 7 days</option><option value="month">Last 30 days</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
-              <button type="button" onClick={onNewProject} className="inline-flex h-[38px] items-center gap-2 rounded-[9px] bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
+              <button type="button" onClick={onNewProject} className="inline-flex h-[38px] items-center gap-2 rounded-[9px] bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/>{activeView === "overview" ? "Create Game" : "New Project"}</button>
             </div>
           </div>
           {children}
