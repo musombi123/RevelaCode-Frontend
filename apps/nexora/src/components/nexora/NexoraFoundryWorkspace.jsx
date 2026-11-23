@@ -1,14 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import AndroidBuildConsole from "./AndroidBuildConsole.jsx";
-import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
-import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+const AndroidBuildConsole = lazy(() => import("./AndroidBuildConsole.jsx"));
+const NexoraDeviceBridge = lazy(() => import("./NexoraDeviceBridge.jsx"));
+const CreatorFlowPanel = lazy(() => import("./CreatorFlowPanel.jsx"));
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
-import NexoraDesktopFactoryPanel from "./NexoraDesktopFactoryPanel.jsx";
-import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
-import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
+const NexoraDesktopFactoryPanel = lazy(() => import("./NexoraDesktopFactoryPanel.jsx"));
+const NexoraSceneInspector = lazy(() => import("./NexoraSceneInspector.jsx"));
+const NexoraWorldBuilderPanel = lazy(() => import("./NexoraWorldBuilderPanel.jsx"));
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
-import { NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
+const NexoraWorkspacePages = lazy(() => import("./NexoraWorkspacePages.jsx"));
+const NexoraProjectsPage = (props) => <NexoraWorkspacePages {...props} page="projects" />;
+const NexoraTasksPage = (props) => <NexoraWorkspacePages {...props} page="tasks" />;
+const NexoraAnalyticsPage = (props) => <NexoraWorkspacePages {...props} page="analytics" />;
+const NexoraMarketplacePage = (props) => <NexoraWorkspacePages {...props} page="marketplace" />;
+const NexoraSettingsPage = (props) => <NexoraWorkspacePages {...props} page="settings" />;
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
@@ -1635,6 +1640,7 @@ export default function NexoraFoundryWorkspace() {
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
 
+      <Suspense fallback={<div role="status" className="mx-auto my-8 max-w-5xl rounded-xl border border-cyan-900/50 bg-[#0b1118] p-5 text-xs text-cyan-200">Loading workspace tool…</div>}>
       {studioView === "overview" && <NexoraStudioOverview
         projects={projects}
         activeProject={activeProject}
@@ -1952,6 +1958,7 @@ export default function NexoraFoundryWorkspace() {
         />}
 
 
+      </Suspense>
       <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600">
         <div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name || "—"}</span><span>{cloudProjectActive?"LOCAL PROJECT SERVER":"LOCAL DRAFT"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>NEXORA STUDIO PRO</span></div>
         <div className="flex gap-3"><span>{sceneNodes.length} SCENE NODES</span><span>GPU TELEMETRY: NOT AVAILABLE IN BROWSER</span></div>
