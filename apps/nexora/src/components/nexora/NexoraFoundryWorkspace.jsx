@@ -1241,7 +1241,33 @@ export default function NexoraFoundryWorkspace() {
         body: JSON.stringify({ asset_id: asset.id, resolution: polyHavenResolution }),
       });
       setPolyHavenDownloaded(current => ({ ...current, [asset.id]: result }));
-      setNotice(`${result.name} downloaded and integrity-verified directly into ${result.directory}. The asset is licensed CC0-1.0.`);
+      // The desktop agent writes Poly Haven models into the shared AssetRegistry.
+      // Refresh that authoritative catalogue immediately so downloads appear in the library.
+      const libraryResponse = await localEngineFetch(
+        `/api/v1/desktop/projects/${encodeURIComponent(activeProject.id)}/assets/library`,
+        { headers: { Accept: "application/json" }, cache: "no-store" }
+      );
+      if (!libraryResponse.ok) throw new Error(`Asset library refresh failed (HTTP ${libraryResponse.status}).`);
+      const libraryPayload = await libraryResponse.json();
+      const registeredAssets = (libraryPayload.assets || []).map(item => ({
+        id: item.asset_id || item.id,
+        name: item.name || item.asset_id || item.path,
+        type: String(item.type || item.format || "").toLowerCase(),
+        size: Number(item.size_bytes || item.metadata?.size_bytes || 0),
+        addedAt: item.created_at || now(),
+        status: "installed_registry",
+        remote: true,
+        source: item.source || item.metadata?.source || "Desktop Asset Registry",
+        license: item.license || item.license_name || item.metadata?.license || "",
+        assetPath: item.path,
+        registry: true,
+      })).filter(item => item.id && item.type);
+      patchProject(project => {
+        const existing = new Map((project.assets || []).map(item => [item.id, item]));
+        for (const registered of registeredAssets) existing.set(registered.id, { ...existing.get(registered.id), ...registered });
+        return { ...project, assets: [...existing.values()] };
+      });
+      setNotice(`${result.name} downloaded, checksum-verified and registered. Project library refreshed (${registeredAssets.length} registered assets).`);
       if (result.files?.some(file => file.path.toLowerCase().endsWith(".glb"))) {
         setPreviewSelection({ type: "polyhaven", id: asset.id });
         setStudioView("game-editor");
