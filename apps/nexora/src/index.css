@@ -681,3 +681,55 @@ body {
  .nx-stat-value { font-size: 20px !important; }
  .nx-sparkline { display: none; }
 }
+
+/* Phase 3: production job monitor + inspector */
+.nx-live-jobs-card { border: 1px solid rgba(42,65,93,.8); background: linear-gradient(150deg,#101e30,#0c1726); border-radius: 14px; padding: 14px; }
+.nx-live-jobs-card .nx-section-title { margin-bottom: 10px; }
+.nx-live-job-count { display: inline-flex; margin-left: 8px; border-radius: 999px; border: 1px solid rgba(16,213,242,.22); background: rgba(16,213,242,.08); padding: 2px 8px; color: #72e8f7; font-size: 10px; vertical-align: middle; }
+.nx-live-job-list { display: flex; flex-direction: column; gap: 7px; }
+.nx-live-job-row { display: grid; grid-template-columns: 32px minmax(0,1fr) auto 16px; align-items: center; gap: 10px; width: 100%; border: 1px solid rgba(42,65,93,.58); border-radius: 10px; padding: 10px; text-align: left; background: rgba(5,15,26,.48); color: #aabbd0; transition: border-color .15s,background .15s; }
+.nx-live-job-row:hover { border-color: rgba(16,213,242,.4); background: rgba(16,213,242,.045); }
+.nx-live-job-indicator { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #6ce2f5; background: rgba(16,213,242,.1); }
+.nx-live-job-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.nx-live-job-copy strong { font-size: 12px; color: #e6eef9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-live-job-copy small { font-size: 10px; color: #73879f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-live-job-state { border-radius: 7px; padding: 5px 7px; background: rgba(16,213,242,.07); color: #6ce2f5; font-size: 9px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+.nx-live-job-progress { display: flex; align-items: center; gap: 7px; grid-column: 2 / 4; }
+.nx-live-job-progress i { height: 4px; flex: 1; border-radius: 99px; background: linear-gradient(90deg,#0bcab5,#10d5f2); }
+.nx-live-job-progress b { font-size: 10px; color: #91a8bf; font-variant-numeric: tabular-nums; }
+.nx-live-jobs-empty { border: 1px dashed rgba(42,65,93,.65); border-radius: 10px; padding: 16px; color: #72859b; font-size: 11px; line-height: 1.6; }
+.nx-live-job-recent { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid rgba(42,65,93,.55); margin-top: 10px; padding-top: 9px; font-size: 10px; color: #71859b; }
+.nx-live-job-recent button { display: inline-flex; align-items: center; gap: 5px; color: #8ceaf6; font-weight: 700; }
+.nx-job-drawer-overlay { position: fixed; inset: 0; z-index: 90; display: flex; justify-content: flex-end; background: rgba(1,5,10,.72); backdrop-filter: blur(4px); }
+.nx-job-drawer { width: min(540px,100vw); height: 100%; background: #091421; border-left: 1px solid #29415f; box-shadow: -25px 0 80px rgba(0,0,0,.45); display: flex; flex-direction: column; overflow: hidden; }
+.nx-job-drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px; border-bottom: 1px solid #20334b; }
+.nx-job-drawer-header h2 { margin-top: 5px; color: #f3f7fc; font-size: 18px; font-weight: 900; }
+.nx-job-drawer-header p { margin-top: 4px; color: #71859b; font-size: 10px; overflow-wrap: anywhere; }
+.nx-job-drawer-eyebrow { color: #60dff3; font-size: 9px; font-weight: 900; letter-spacing: .18em; }
+.nx-job-drawer-header button { display: grid; place-items: center; padding: 8px; border: 1px solid #29415f; border-radius: 9px; color: #9aadc3; }
+.nx-job-drawer-body { overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 15px; }
+.nx-job-detail-status { display: inline-flex; align-self: flex-start; border-radius: 8px; padding: 8px 10px; background: rgba(16,213,242,.08); color: #6ce2f5; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.nx-job-state-failed { color: #fb929a; background: rgba(244,63,94,.1); }
+.nx-job-state-completed { color: #6ce6a9; background: rgba(16,185,129,.1); }
+.nx-job-state-review { color: #ffd17c; background: rgba(245,158,11,.1); }
+.nx-job-detail-progress { height: 5px; background: #1a2a3d; border-radius: 999px; overflow: hidden; }
+.nx-job-detail-progress i { display: block; height: 100%; background: linear-gradient(90deg,#0bcab5,#10d5f2); border-radius: inherit; }
+.nx-job-metadata { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+.nx-job-metadata div { min-width: 0; border: 1px solid #20334b; background: #0c1a2a; border-radius: 10px; padding: 10px; }
+.nx-job-metadata dt { color: #71859b; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.nx-job-metadata dd { margin-top: 5px; color: #c9d8e8; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.nx-job-log-section h3, .nx-job-artifacts h3 { display: flex; align-items: center; gap: 7px; color: #dce8f6; font-size: 11px; font-weight: 900; margin-bottom: 8px; }
+.nx-job-log-output { max-height: 360px; overflow: auto; border: 1px solid #20334b; background: #050c14; border-radius: 10px; padding: 12px; color: #9fc6d9; font: 10px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.nx-job-log-unavailable { border: 1px dashed #29415f; border-radius: 10px; padding: 12px; color: #71859b; font-size: 10px; line-height: 1.6; }
+.nx-job-artifact-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px; border: 1px solid #20334b; border-radius: 9px; margin-top: 6px; color: #c9d8e8; font-size: 10px; overflow-wrap: anywhere; }
+.nx-job-artifact-row a { display: inline-flex; color: #67e5f5; }
+.nx-job-artifact-row small { color: #71859b; }
+@media (max-width: 520px) {
+ .nx-live-job-row { grid-template-columns: 30px minmax(0,1fr) auto; gap: 7px; padding: 9px; }
+ .nx-live-job-row > svg:last-child { display: none; }
+ .nx-live-job-copy small { white-space: normal; }
+ .nx-live-job-progress { grid-column: 2 / 4; }
+ .nx-job-drawer-body { padding: 12px; }
+ .nx-job-drawer-header { padding: 16px; }
+ .nx-job-metadata { grid-template-columns: 1fr; }
+}
