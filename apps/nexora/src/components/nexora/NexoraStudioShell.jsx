@@ -7,19 +7,21 @@ import {
 } from "lucide-react";
 
 const NAV_GROUPS = [
-  { label: "WORKSPACE", items: [
+  { label: "STUDIO", items: [
     { id: "overview", label: "Overview", icon: Home },
     { id: "projects", label: "Projects", icon: FolderOpen },
-    { id: "game-editor", label: "Game Editor", icon: Gamepad2 },
+    { id: "game-editor", label: "Create / Edit Game", icon: Gamepad2 },
     { id: "ai", label: "AI Studio", icon: Sparkles },
+  ]},
+  { label: "PRODUCTION", items: [
     { id: "world", label: "World Builder", icon: Box },
     { id: "assets", label: "Asset Library", icon: Layers3 },
     { id: "build", label: "Build & Test", icon: Play },
     { id: "device-lab", label: "Device Lab", icon: Smartphone },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
   ]},
   { label: "MANAGE", items: [
     { id: "team", label: "Team & Tasks", icon: Users },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "marketplace", label: "Marketplace", icon: ShoppingCart },
     { id: "settings", label: "Settings", icon: Settings2 },
   ]},
