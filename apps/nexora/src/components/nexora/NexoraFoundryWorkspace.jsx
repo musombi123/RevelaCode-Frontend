@@ -9,6 +9,7 @@ const NexoraSceneInspector = lazy(() => import("./NexoraSceneInspector.jsx"));
 const NexoraWorldBuilderPanel = lazy(() => import("./NexoraWorldBuilderPanel.jsx"));
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
 import { resolveLocalEngineUrl } from "./localEngineRouting.js";
+import { listProjectRecoveries, readProjectRecovery, removeProjectRecovery, writeProjectRecovery } from "./localProjectRecovery.js";
 const NexoraProjectsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraProjectsPage })));
 const NexoraTasksPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraTasksPage })));
 const NexoraAnalyticsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraAnalyticsPage })));
@@ -179,6 +180,9 @@ function workspaceProjectDocument(project) {
   const {
     _remoteVersion,
     _localOnly,
+    _pendingLocalRecovery,
+    _offlineRecovery,
+    _recoveryConflict,
     assets,
     revisions,
     createdAt,
@@ -479,7 +483,9 @@ export default function NexoraFoundryWorkspace() {
         setNexoraUser(null);
       }
       const detail = payload?.detail;
-      throw new Error(typeof detail === "string" ? detail : detail?.message || payload?.message || `NEXORA request failed (HTTP ${response.status}).`);
+      const error = new Error(typeof detail === "string" ? detail : detail?.message || payload?.message || `NEXORA request failed (HTTP ${response.status}).`);
+      error.status = response.status;
+      throw error;
     }
     return payload;
   }, [nexoraSession?.access_token, nexoraAuthFetch, localEngineFetch]);
@@ -543,7 +549,31 @@ export default function NexoraFoundryWorkspace() {
     }
     if (!localAgentConnected) {
       setCloudLoaded(false);
-      setApiStatus({ state: "local_setup_required", label: "Connect your computer in Device Lab to load local projects and create games" });
+      // The paired computer is unavailable, but the last local project
+      // snapshots remain usable as browser recovery copies until reconnect.
+      const recovered = listProjectRecoveries(localStorage, storageUserId).map((record) => {
+        const project = {
+          ...record.project,
+          _remoteVersion: record.remote_version || 1,
+          _pendingLocalRecovery: Boolean(record.pending),
+          _offlineRecovery: true,
+        };
+        cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
+        return project;
+      });
+      const localDrafts = readProjects(storageUserId).filter((item) => !item._remoteVersion);
+      const ids = new Set(recovered.map((item) => item.id));
+      const visible = [...recovered, ...localDrafts.filter((item) => !ids.has(item.id))];
+      setProjects(visible);
+      setActiveId((current) => visible.some((item) => item.id === current)
+        ? current
+        : visible[0]?.id || "");
+      setApiStatus({
+        state: recovered.length ? "recovery_available" : "local_setup_required",
+        label: recovered.length
+          ? "Local Agent offline · browser recovery copies available"
+          : "Connect your computer in Device Lab to load projects and start production",
+      });
       return undefined;
     }
     let cancelled = false;
@@ -559,8 +589,76 @@ export default function NexoraFoundryWorkspace() {
         } catch {
           // Project metadata remains usable while an asset listing is retried.
         }
-        const project = workspaceProjectFromCloud(row, assets);
-        cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
+        const serverProject = workspaceProjectFromCloud(row, assets);
+        const serverDocument = workspaceProjectDocument(serverProject);
+        const serverSerialized = JSON.stringify(serverDocument);
+        const recovery = readProjectRecovery(localStorage, storageUserId, row.id);
+        let project = serverProject;
+
+        if (recovery?.pending && recovery.project) {
+          const recoveredProject = {
+            ...serverProject,
+            ...recovery.project,
+            id: String(row.id),
+            assets,
+            _remoteVersion: Number(row.version || 1),
+            _pendingLocalRecovery: true,
+            updatedAt: recovery.saved_at || now(),
+          };
+          const recoveredDocument = workspaceProjectDocument(recoveredProject);
+          const recoveredSerialized = JSON.stringify(recoveredDocument);
+          const versionChanged = Boolean(
+            recovery.remote_version &&
+            Number(recovery.remote_version) !== Number(row.version || 1)
+          );
+
+          if (recoveredSerialized === serverSerialized) {
+            project = serverProject;
+            writeProjectRecovery(localStorage, storageUserId, project, {
+              pending: false,
+              remoteVersion: project._remoteVersion,
+            });
+          } else if (versionChanged) {
+            // A different device has advanced the local project since this
+            // browser snapshot was made. Keep both versions; never auto-overwrite.
+            project = { ...recoveredProject, _recoveryConflict: true };
+            setNotice(`Offline edits for "${project.name}" were preserved, but the project changed on the paired computer. Review/export the recovery copy before resolving the conflict.`);
+          } else {
+            try {
+              const saved = await apiRequest(`/api/v1/workspace/projects/${row.id}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                  name: recoveredProject.name,
+                  description: recoveredProject.description,
+                  document: recoveredDocument,
+                  expected_version: Number(row.version || 1),
+                }),
+              });
+              project = workspaceProjectFromCloud(saved, assets);
+              writeProjectRecovery(localStorage, storageUserId, project, {
+                pending: false,
+                remoteVersion: project._remoteVersion,
+              });
+            } catch (error) {
+              project = {
+                ...recoveredProject,
+                _recoveryConflict: error.status === 409,
+              };
+              setNotice(error.status === 409
+                ? `Offline edits for "${project.name}" were preserved. The paired computer has a newer project version, so NEXORA did not overwrite it.`
+                : `Offline edits for "${project.name}" were preserved in this browser. Local sync failed: ${error.message}`);
+            }
+          }
+        } else {
+          writeProjectRecovery(localStorage, storageUserId, serverProject, {
+            pending: false,
+            remoteVersion: serverProject._remoteVersion,
+          });
+        }
+
+        // A conflict keeps the server version as the baseline, so future edits
+        // cannot silently turn into an unconditional overwrite.
+        cloudBaseline.current.set(project.id, serverSerialized);
         return project;
       }));
       if (cancelled) return;
@@ -577,12 +675,15 @@ export default function NexoraFoundryWorkspace() {
         ? current
         : hydrated[0]?.id || localOnly[0]?.id || "");
       setCloudLoaded(true);
-      setApiStatus({ state: "online", label: "Local compute environment and project storage connected" });
+      const hasRecoveryConflict = visibleProjects.some((item) => item._recoveryConflict);
+      setApiStatus(hasRecoveryConflict
+        ? { state: "conflict", label: "Paired computer connected · offline edits need conflict review" }
+        : { state: "online", label: "Paired computer workspace and local project storage connected" });
     })().catch((error) => {
       if (!cancelled) {
         setCloudLoaded(false);
         setApiStatus({ state: "offline", label: error.message || "NEXORA cloud workspace unavailable" });
-        setNotice(error.message || "Could not load NEXORA cloud projects.");
+        setNotice(error.message || "Could not load projects from the paired computer.");
       }
     });
     return () => { cancelled = true; };
@@ -620,7 +721,7 @@ export default function NexoraFoundryWorkspace() {
       const localTasks = readStudioTasks(storageUserId).filter(task => !task._remoteTask && !remoteIds.has(task.id));
       setStudioTasks([...remoteTasks, ...localTasks]);
     })().catch(error => {
-      if (live) setNotice(error.message || "Could not sync project tasks from NEXORA cloud.");
+      if (live) setNotice(error.message || "Could not sync project tasks from the paired computer.");
     });
     return () => { live = false; };
   }, [authenticatedCloudSession, cloudLoaded, cloudProjectIds, projectsScopeId, storageUserId, apiRequest]);
@@ -643,6 +744,25 @@ export default function NexoraFoundryWorkspace() {
     const localProjects = projects.filter((item) => !item._remoteVersion);
     if (projectsScopeId !== storageUserId) return;
     try { localStorage.setItem(projectStorageKey(storageUserId), JSON.stringify(localProjects)); } catch { setNotice("Browser storage is full. Export this project to keep a portable copy."); }
+  }, [projects, projectsScopeId, storageUserId]);
+
+  useEffect(() => {
+    if (projectsScopeId !== storageUserId) return;
+    let failed = false;
+    for (const project of projects) {
+      if (!project?._remoteVersion || !project.id) continue;
+      const serialized = JSON.stringify(workspaceProjectDocument(project));
+      const baseline = cloudBaseline.current.get(project.id);
+      const previous = readProjectRecovery(localStorage, storageUserId, project.id);
+      const pending = baseline !== undefined
+        ? baseline !== serialized
+        : Boolean(project._pendingLocalRecovery || previous?.pending);
+      if (!writeProjectRecovery(localStorage, storageUserId, project, {
+        pending,
+        remoteVersion: project._remoteVersion,
+      })) failed = true;
+    }
+    if (failed) setNotice("A browser recovery copy could not be updated. Export the project before continuing.");
   }, [projects, projectsScopeId, storageUserId]);
 
   useEffect(() => {
@@ -705,7 +825,7 @@ export default function NexoraFoundryWorkspace() {
       setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
       setNotice("Project metadata migrated to your paired NEXORA workspace. Re-upload the original GLB/media files; browser-only binary assets are not copied by this migration.");
     } catch (error) {
-      setNotice(error.message || "Could not migrate this device-only project to NEXORA cloud.");
+      setNotice(error.message || "Could not save this browser draft to the paired computer.");
     }
   };
 
@@ -792,7 +912,7 @@ export default function NexoraFoundryWorkspace() {
         const created = workspaceProjectFromCloud(saved,[]);
         cloudBaseline.current.set(created.id,JSON.stringify(workspaceProjectDocument(created)));
         setProjects(current=>[created,...current]);
-        setNotice("Project duplicated in NEXORA cloud. Binary assets must be imported again into the copy.");
+        setNotice("Project duplicated on the paired computer. Import binary assets again into the copy.");
       } else {
         const created = {...clone,id:makeId("project"),createdAt:now(),updatedAt:now(),_localOnly:true};
         setProjects(current=>[{...created},...current]);
@@ -883,7 +1003,7 @@ export default function NexoraFoundryWorkspace() {
           method:"PUT", body:JSON.stringify(taskPayload(taskDraft)),
         });
         setStudioTasks(current=>current.map(task=>task.id===existing.id?{...response.task,projectId:existing.projectId,_remoteTask:true}:task));
-        setNotice("Cloud task updated in its NEXORA project.");
+        setNotice("Task updated on the paired computer.");
       } else if (selectedProject?._remoteVersion) {
         const response = await apiRequest(`/api/v1/workspace/projects/${selectedProject.id}/tasks`, {
           method:"POST", body:JSON.stringify(taskPayload(taskDraft)),
@@ -892,7 +1012,7 @@ export default function NexoraFoundryWorkspace() {
           {...response.task,projectId:selectedProject.id,_remoteTask:true},
           ...current.filter(task=>task.id!==taskEditingId),
         ]);
-        setNotice("Task saved to the NEXORA cloud project.");
+        setNotice("Task saved to the project on your paired computer.");
       } else if (taskEditingId) {
         setStudioTasks(current=>current.map(task=>task.id===taskEditingId?{...task,...taskDraft,title:taskDraft.title.trim(),updatedAt:timestamp,_remoteTask:false}:task));
         setNotice("Local task updated in this browser.");
@@ -932,7 +1052,7 @@ export default function NexoraFoundryWorkspace() {
         await apiRequest(`/api/v1/workspace/projects/${task.projectId}/tasks/${task.id}`, {method:"DELETE"});
       }
       setStudioTasks(current=>current.filter(item=>item.id!==task.id));
-      setNotice(task._remoteTask?"Cloud task deleted.":"Local task deleted.");
+      setNotice(task._remoteTask?"Paired-computer task deleted.":"Local task deleted.");
     } catch(error) {
       setNotice(error.message || "Task could not be deleted.");
     }
@@ -944,9 +1064,10 @@ export default function NexoraFoundryWorkspace() {
       try {
         await apiRequest(`/api/v1/workspace/projects/${activeProject.id}`, { method: "DELETE" });
         cloudBaseline.current.delete(activeProject.id);
-        setNotice("Cloud project, private assets and artifacts were deleted.");
+        removeProjectRecovery(localStorage, storageUserId, activeProject.id);
+        setNotice("The local project, its assets and artifacts were deleted from the paired computer.");
       } catch (error) {
-        setNotice(error.message || "Could not delete cloud project.");
+        setNotice(error.message || "Could not delete project on the paired computer.");
         return;
       }
     } else if (!activeProject._remoteVersion) {
@@ -1138,14 +1259,14 @@ export default function NexoraFoundryWorkspace() {
         setActiveId(remoteProject.id);
         setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
         setStudioView("game-editor");
-        setNotice("Project definition imported into PostgreSQL. Re-upload its original GLB and media files to the private NEXORA bucket.");
+        setNotice("Project definition imported to the paired computer. Re-import its original GLB and media files.");
         return;
       }
       setProjects((current) => [imported, ...current]);
       setActiveId(imported.id);
       setSelectedObjectId(imported.scene.objects[0]?.id || "");
       setStudioView("game-editor");
-      setNotice("Project imported into this browser. Sign in to move it into private NEXORA cloud storage.");
+      setNotice("Project imported into this browser. Connect the Local Agent to save it on your paired computer.");
     } catch (error) { setNotice(error.message || "Could not import project."); }
   };
 
@@ -1261,7 +1382,7 @@ export default function NexoraFoundryWorkspace() {
         await removeStoredAsset(asset.id,nexoraUser?.id || "anonymous");
       }
       patchProject((project) => ({ ...project, assets: project.assets.filter((item) => item.id !== asset.id) }));
-      setNotice(`Removed ${asset.name} from ${cloudMode ? "private cloud storage" : "this browser"}.`);
+      setNotice(`Removed ${asset.name} from ${cloudMode ? "the paired computer" : "this browser"}.`);
     } catch (error) {
       setNotice(error.message || "Could not remove the stored asset.");
     }
@@ -1299,7 +1420,7 @@ export default function NexoraFoundryWorkspace() {
 
   const convertAssetToGameAsset = async (asset, targetRole = "prop") => {
     if (!cloudProjectActive || !activeProject) {
-      setNotice("Upload and save this asset to your NEXORA account-owned cloud project before conversion.");
+      setNotice("Upload and save this asset to your NEXORA account-owned project on the paired computer before conversion.");
       return;
     }
     const acceptedTypes = ["png","jpg","jpeg","webp","glb","gltf","obj","fbx","ply"];
@@ -1323,7 +1444,7 @@ export default function NexoraFoundryWorkspace() {
 
   const queueProductionJob = async (kind, target = "desktop", android = null) => {
     if (!cloudProjectActive || !activeProject) {
-      setNotice("Select a cloud-synced project before queueing Godot production jobs.");
+      setNotice("Select a project saved on the paired computer before queueing Godot production jobs.");
       return;
     }
     const issues = validateProject();
@@ -1352,7 +1473,7 @@ export default function NexoraFoundryWorkspace() {
   }, [activeProject?.id, cloudProjectActive, refreshJobs]);
 
   useEffect(() => {
-    if (!cloudMode || !cloudLoaded || !activeProject?._remoteVersion) return undefined;
+    if (!cloudMode || !cloudLoaded || !activeProject?._remoteVersion || activeProject?._recoveryConflict) return undefined;
     const projectId = activeProject.id;
     const document = workspaceProjectDocument(activeProject);
     const serialized = JSON.stringify(document);
@@ -1374,10 +1495,15 @@ export default function NexoraFoundryWorkspace() {
         setProjects((current) => current.map((item) =>
           item.id === projectId ? { ...item, _remoteVersion: saved.version, updatedAt: saved.updated_at } : item
         ));
-        setApiStatus({ state: "online", label: "NEXORA cloud changes saved" });
+        setApiStatus({ state: "online", label: "Changes saved to the paired computer" });
       } catch (error) {
-        setApiStatus({ state: "offline", label: error.message || "Cloud save failed" });
-        setNotice(error.message || "Cloud autosave failed. Export a backup before continuing.");
+        setApiStatus({
+          state: error.status === 409 ? "conflict" : "offline",
+          label: error.status === 409 ? "Local project version conflict" : "Paired computer save unavailable",
+        });
+        setNotice(error.status === 409
+          ? "The paired project changed before this save. Your browser recovery copy is preserved; reload and review the latest project before continuing."
+          : `Local autosave failed. Your browser recovery copy is preserved: ${error.message || "Local Agent unavailable"}`);
       }
     }, 850);
     return () => window.clearTimeout(cloudSaveTimer.current);
@@ -1392,9 +1518,9 @@ export default function NexoraFoundryWorkspace() {
     try {
       const response = await fetch(`${API_BASE}/health`, { headers: { Accept: "application/json" }, cache: "no-store" });
       if (!response.ok) throw new Error(`Health check returned HTTP ${response.status}`);
-      setApiStatus({ state: "online", label: "NEXORA API and PostgreSQL/R2 ready" });
+      setApiStatus({ state: "online", label: "NEXORA account and control-plane API reachable" });
     } catch (error) {
-      setApiStatus({ state: "offline", label: error.message || "NEXORA API or cloud dependency unavailable" });
+      setApiStatus({ state: "offline", label: error.message || "NEXORA account and control-plane API unavailable" });
     }
   }, []);
 
@@ -1528,7 +1654,7 @@ export default function NexoraFoundryWorkspace() {
     "device-lab":["Device Lab","Pair your local desktop companion and test on connected devices"],
     factory:["Desktop Factory","Configure the local workspace, toolchains, recovery points and store handoff"],
     analytics:["Analytics","Production metrics calculated from loaded project and worker records"],
-    team:["Team & Tasks","Manage cloud-linked project tasks and your production workflow"],
+    team:["Team & Tasks","Manage tasks saved with projects on the paired computer and your production workflow"],
     marketplace:["Marketplace","Browse the built-in NEXORA procedural template catalogue"],
     settings:["Settings","Account, workspace preferences, connection and billing access"],
   };
@@ -1637,7 +1763,7 @@ export default function NexoraFoundryWorkspace() {
       dateRange={overviewRange}
       onDateRangeChange={setOverviewRange}
     >
-      {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Your NEXORA account is signed in, but cloud project synchronization is not active. Local drafts remain available in this browser.</div>}
+      {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Your NEXORA account is signed in, but project on the paired computer synchronization is not active. Local drafts remain available in this browser.</div>}
       {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
       {notice&&<div role="status" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
       <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
@@ -1756,7 +1882,7 @@ export default function NexoraFoundryWorkspace() {
 
         {studioView === "ai" && <section className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-[#20334B] bg-[#101B2C] p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-sm font-extrabold text-white">AI & Production Job Queue</h2><p className="mt-1 text-[10px] text-slate-500">Live status from the selected cloud project. Retry is available only for supported Foundry job types.</p></div>
+            <div><h2 className="text-sm font-extrabold text-white">AI & Production Job Queue</h2><p className="mt-1 text-[10px] text-slate-500">Live status and recovered history from the project on your paired computer. Retry is available only for supported Foundry job types.</p></div>
             <button type="button" onClick={refreshJobs} disabled={!cloudProjectActive||busy} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-cyan-200 disabled:opacity-40"><RefreshCw size={12} className="mr-1 inline"/> Refresh Queue</button>
           </div>
           {jobs.length ? <div className="space-y-2">{jobs.map(job=>{
@@ -1773,7 +1899,7 @@ export default function NexoraFoundryWorkspace() {
                 {(job.artifacts||[]).map(artifact=><button key={artifact.id} type="button" onClick={()=>downloadArtifact(artifact)} className="rounded-lg border border-cyan-500/30 px-3 py-1.5 text-[9px] font-bold text-cyan-200">Download {artifact.filename}</button>)}
               </div>
             </article>;
-          })}</div> : <div className="rounded-xl border border-dashed border-[#29415F] p-7 text-center text-xs text-slate-500">{cloudProjectActive?"No jobs recorded for this project yet.":"Open a cloud-synced project to view its production job history."}</div>}
+          })}</div> : <div className="rounded-xl border border-dashed border-[#29415F] p-7 text-center text-xs text-slate-500">{cloudProjectActive?"No jobs recorded for this project yet.":"Connect your paired computer and open one of its projects to view local production history."}</div>}
         </section>}
 
         {studioView === "game-editor" && <div className="mx-auto w-full max-w-6xl">
@@ -1975,7 +2101,7 @@ export default function NexoraFoundryWorkspace() {
 
     {taskModalOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" onMouseDown={event=>{if(event.target===event.currentTarget)setTaskModalOpen(false);}}>
       <form onSubmit={saveTask} className="w-full max-w-2xl rounded-2xl border border-[#29415F] bg-[#101C2D] p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">PROJECT TASK BOARD</div><h2 className="mt-1 text-lg font-black text-white">{taskEditingId?"Edit Task":"Create Task"}</h2><p className="mt-1 text-xs text-slate-500">Tasks linked to cloud projects sync with your NEXORA account. Unlinked and local-draft tasks stay in this browser. Team-member sharing is not connected.</p></div><button type="button" onClick={()=>setTaskModalOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close task dialog"><X size={17}/></button></div>
+        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">PROJECT TASK BOARD</div><h2 className="mt-1 text-lg font-black text-white">{taskEditingId?"Edit Task":"Create Task"}</h2><p className="mt-1 text-xs text-slate-500">Tasks linked to project on the paired computers sync with your NEXORA account. Unlinked and local-draft tasks stay in this browser. Team-member sharing is not connected.</p></div><button type="button" onClick={()=>setTaskModalOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close task dialog"><X size={17}/></button></div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <label className="block text-[10px] font-bold text-slate-400 sm:col-span-2">TASK TITLE<input autoFocus required maxLength="160" value={taskDraft.title} onChange={e=>setTaskDraft(current=>({...current,title:e.target.value}))} placeholder="e.g. Implement player inventory" className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400/60"/></label>
           <label className="block text-[10px] font-bold text-slate-400">LINKED PROJECT<select disabled={Boolean(studioTasks.find(task=>task.id===taskEditingId)?._remoteTask)} value={taskDraft.projectId} onChange={e=>setTaskDraft(current=>({...current,projectId:e.target.value}))} className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white"><option value="">No project</option>{projects.filter(project=>!project.archived).map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
