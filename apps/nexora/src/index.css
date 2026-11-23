@@ -588,3 +588,96 @@ body {
   .nx-quick-actions { flex-direction: column; align-items: stretch; }
   .nx-quick-button { width: 100%; flex: 0 0 44px; }
 }
+
+/* NEXORA modernization phases 1–2: responsive command center */
+.nexora-shell { background: radial-gradient(ellipse at 68% -10%, rgba(12,82,117,.17), transparent 44%), #070d16; }
+.nexora-main-content { width: min(1500px, calc(100% - 40px)); margin: 0 auto; padding: 18px 0 32px; }
+.nexora-page-heading { min-height: 68px; margin-bottom: 18px !important; }
+.nexora-page-heading h1 { font-size: clamp(24px, 2.1vw, 32px) !important; line-height: 1.12 !important; }
+.nexora-page-heading p { font-size: 13px !important; color: #8ea3bb !important; margin-top: 6px !important; }
+.nexora-topbar { height: 62px !important; border-color: rgba(42,65,93,.72) !important; }
+.nexora-shell aside.fixed { width: 238px; background: linear-gradient(180deg,#0b1422,#09111d) !important; border-color: rgba(42,65,93,.72) !important; }
+.nexora-shell aside.fixed .nexora-sidebar-nav { padding: 16px 10px !important; }
+.nexora-shell aside.fixed .nexora-sidebar-nav > div { margin-bottom: 14px !important; }
+.nexora-shell aside.fixed .nexora-sidebar-nav > div > div button { height: 40px !important; font-size: 13px !important; border-radius: 10px !important; }
+.nexora-shell aside.fixed .shrink-0.border-t { gap: 8px !important; padding: 10px !important; }
+.nexora-shell aside.fixed .shrink-0.border-t > div:first-child { min-height: 68px !important; }
+.nexora-shell aside.fixed .shrink-0.border-t > button { min-height: 48px !important; }
+.nexora-overview { display: flex; flex-direction: column; gap: 16px; }
+.nx-stats-grid { height: auto !important; gap: 12px !important; }
+.nx-stat { min-height: 88px !important; height: auto !important; border-radius: 12px !important; padding: 12px 14px !important; background: linear-gradient(145deg,#101e30,#0c1726) !important; }
+.nx-hero-grid { height: auto !important; grid-template-columns: minmax(0,2.2fr) minmax(260px,.9fr) !important; gap: 14px !important; }
+.nx-hero-card, .nx-health-card, .nx-pipeline-card, .nx-recent-card, .nx-activity-card, .nx-build-card { border-radius: 12px !important; border-color: rgba(42,65,93,.8) !important; }
+.nx-hero-card { min-height: 290px; }
+.nx-hero-heading { height: 46px !important; padding-inline: 16px !important; }
+.nx-hero-art { height: 244px !important; }
+.nx-hero-content, .nx-hero-empty { padding: 18px 24px !important; }
+.nx-hero-content h2, .nx-hero-empty h2 { text-transform: none !important; font-size: clamp(22px,2vw,29px) !important; line-height: 1.2 !important; }
+.nx-health-card { min-height: 290px; height: auto !important; }
+.nx-health-gauge { height: 142px !important; }
+.nx-pipeline-card { height: auto !important; padding: 12px !important; }
+.nx-pipeline-grid { height: auto !important; gap: 10px !important; }
+.nx-pipeline-column { height: auto !important; min-height: 136px; }
+.nx-bottom-grid { height: auto !important; grid-template-columns: minmax(0,1.35fr) minmax(230px,.9fr) minmax(240px,.9fr) !important; gap: 12px !important; }
+.nx-recent-card, .nx-activity-card, .nx-build-card { height: auto !important; min-height: 168px; }
+.nx-recent-grid { height: auto !important; }
+.nx-recent-project { height: 132px !important; }
+.nx-quick-actions { height: auto !important; min-height: 66px; border-radius: 12px !important; padding: 8px 10px !important; gap: 8px !important; }
+.nx-quick-label { flex-basis: 132px !important; font-size: 13px !important; }
+.nx-quick-button { min-height: 46px !important; border-radius: 10px !important; padding: 0 10px !important; }
+@media (max-width: 1320px) {
+ .nexora-main-content { width: calc(100% - 32px) !important; margin: 0 16px !important; }
+ .nx-bottom-grid { grid-template-columns: minmax(0,1fr) minmax(240px,1fr) !important; }
+ .nx-build-card { grid-column: 1 / -1; }
+}
+@media (max-width: 1050px) {
+ .nx-hero-grid { grid-template-columns: 1fr !important; }
+ .nx-health-card { min-height: 240px; }
+ .nx-bottom-grid { grid-template-columns: minmax(0,1fr) minmax(240px,1fr) !important; }
+ .nx-recent-card { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+ .nexora-main-content { width: calc(100% - 24px) !important; margin: 0 12px !important; padding-top: 12px; }
+ .nx-stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+ .nx-hero-grid { grid-template-columns: 1fr !important; }
+ .nx-bottom-grid { grid-template-columns: 1fr !important; }
+ .nx-recent-card, .nx-activity-card, .nx-build-card { grid-column: auto !important; }
+ .nx-quick-actions { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+ .nx-quick-label { grid-column: 1 / -1; flex-basis: auto !important; }
+ .nx-quick-divider { display: none !important; }
+ .nx-quick-button { flex: none !important; width: 100%; }
+}
+@media (max-width: 520px) {
+ .nx-stats-grid { grid-template-columns: 1fr !important; }
+ .nx-pipeline-grid { grid-template-columns: 1fr !important; }
+ .nx-hero-card { min-height: 260px; }
+ .nx-hero-art { height: 245px !important; }
+ .nx-hero-content h2 { font-size: 22px !important; }
+ .nx-quick-actions { display: flex !important; flex-direction: column !important; align-items: stretch; }
+ .nx-quick-button { min-height: 46px !important; }
+}
+
+/* Dashboard hierarchy: glance first, resume work second, actions third, details last */
+.nexora-shell aside.fixed { width: auto !important; }
+.nexora-overview > .nx-stats-grid { order: 0; }
+.nexora-overview > .nx-hero-grid { order: 1; }
+.nexora-overview > .nx-quick-actions { order: 2; }
+.nexora-overview > .nx-bottom-grid { order: 3; }
+.nexora-overview > .nx-pipeline-card { order: 4; }
+.nx-stats-grid { grid-template-columns: repeat(4,minmax(0,1fr)) !important; }
+.nx-stat-copy { min-width: 0; }
+.nx-stat-value { font-variant-numeric: tabular-nums; }
+.nx-hero-grid { align-items: stretch; }
+.nx-hero-card, .nx-health-card { min-height: 0; }
+.nx-health-checks > div { min-height: 24px; }
+.nx-recent-card, .nx-activity-card, .nx-build-card { overflow: visible !important; }
+.nx-quick-button:focus-visible, .nx-task-row:focus-visible, .nx-recent-project:focus-visible { outline: 2px solid #67e8f9; outline-offset: 2px; }
+@media (max-width: 1050px) {
+ .nx-stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+}
+@media (max-width: 520px) {
+ .nx-stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+ .nx-stat { min-height: 76px !important; padding: 10px !important; }
+ .nx-stat-value { font-size: 20px !important; }
+ .nx-sparkline { display: none; }
+}
