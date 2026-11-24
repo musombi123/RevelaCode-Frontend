@@ -23,6 +23,8 @@ import {
   CardContent,
 } from "@/components/ui/Card";
 
+import { FAITH_LIBRARY_CACHE_SCOPE, getCachedLibrary } from "./studyMaterialCache.js";
+
 const API =
   (
     import.meta.env.VITE_API_URL ||
@@ -54,6 +56,7 @@ const getMaterialId = (material) => {
 export default function StudyFeed({
   userId = "guest",
   onOpen,
+  onStatusChange,
 }) {
   const [materials, setMaterials] =
     useState([]);
@@ -82,37 +85,46 @@ export default function StudyFeed({
 
   const loadMaterials = useCallback(
     async ({ silent = false } = {}) => {
-      if (silent) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+      if (silent) setRefreshing(true);
+      else setLoading(true);
+      setError(false);
+      onStatusChange?.({ state: "loading" });
+
+      let savedCopy = null;
+      try {
+        savedCopy = await getCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE);
+      } catch (cacheError) {
+        console.error("Study library cache read failed:", cacheError);
       }
 
-      setError("");
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      if (offline) {
+        const cachedMaterials = Array.isArray(savedCopy?.materials) ? savedCopy.materials : [];
+        setMaterials(cachedMaterials);
+        onStatusChange?.({
+          state: cachedMaterials.length ? "offline-saved" : "offline-missing",
+          lastUpdated: savedCopy?.savedAt || "",
+        });
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      if (savedCopy && Array.isArray(savedCopy.materials) && savedCopy.materials.length) {
+        setMaterials(savedCopy.materials);
+      }
 
       try {
-        /*
-         * IMPORTANT:
-         * Use the API namespace used by the rest of
-         * the RevelaCode backend.
-         */
         const response = await fetch(
           `${API}/api/study/materials`,
           {
             method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
+            headers: { Accept: "application/json" },
             credentials: "include",
             cache: "no-store",
           }
         );
-
-        const data =
-          await response
-            .json()
-            .catch(() => ({}));
-
+        const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(
             data?.message ||
@@ -121,55 +133,37 @@ export default function StudyFeed({
           );
         }
 
-        /*
-         * Support:
-         * { materials: [] }
-         * { data: [] }
-         * []
-         */
-        const rawMaterials =
-          Array.isArray(data?.materials)
-            ? data.materials
-            : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data)
-            ? data
-            : [];
+        const rawMaterials = Array.isArray(data?.materials)
+          ? data.materials
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+          ? data
+          : [];
 
-        const normalizedMaterials =
-          rawMaterials
-            .map((material) => ({
-              ...material,
-              id: getMaterialId(
-                material
-              ),
-            }))
-            .filter(
-              (material) =>
-                material.id
-            );
+        const normalizedMaterials = rawMaterials
+          .map((material) => ({ ...material, id: getMaterialId(material) }))
+          .filter((material) => material.id);
 
-        setMaterials(
-          normalizedMaterials
-        );
+        setMaterials(normalizedMaterials);
+        onStatusChange?.({ state: "available", lastUpdated: new Date().toISOString() });
       } catch (err) {
-        console.error(
-          "Study feed error:",
-          err
-        );
-
-        setMaterials([]);
-
-        setError(
-          err?.message ||
-            "Unable to load study materials."
-        );
+        console.error("Study feed error:", err);
+        const cachedMaterials = Array.isArray(savedCopy?.materials) ? savedCopy.materials : [];
+        setMaterials(cachedMaterials);
+        setError(true);
+        onStatusChange?.({
+          state: "failed",
+          hasSavedCopy: cachedMaterials.length > 0,
+          lastUpdated: savedCopy?.savedAt || "",
+          retry: () => loadMaterials({ silent: true }),
+        });
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    []
+    [onStatusChange]
   );
 
   /* =======================================================
@@ -250,6 +244,14 @@ export default function StudyFeed({
 
   useEffect(() => {
     loadMaterials();
+  }, [loadMaterials]);
+
+  useEffect(() => {
+    const onOnline = () => loadMaterials({ silent: true });
+    const onOffline = () => loadMaterials({ silent: true });
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => { window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
   }, [loadMaterials]);
 
   useEffect(() => {
@@ -411,56 +413,13 @@ export default function StudyFeed({
 
   if (loading) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="mx-auto h-8 w-8 animate-spin text-emerald-500" />
-
-          <p className="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">
-            Loading study materials...
-          </p>
-        </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {[1,2,3,4].map((item) => <div key={item} className="h-32 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 motion-reduce:animate-none dark:border-slate-800 dark:bg-slate-900"/> )}
       </div>
     );
   }
 
-  /* =======================================================
-     ERROR
-  ======================================================= */
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-900/40 dark:bg-red-950/20">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
-
-          <div>
-            <h2 className="font-bold text-red-700 dark:text-red-300">
-              Study Library unavailable
-            </h2>
-
-            <p className="mt-1 text-sm leading-6 text-red-600 dark:text-red-400">
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                loadMaterials()
-              }
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /* =======================================================
-     EMPTY
-  ======================================================= */
+  if (error && materials.length === 0) return null;
 
   if (materials.length === 0) {
     return (
