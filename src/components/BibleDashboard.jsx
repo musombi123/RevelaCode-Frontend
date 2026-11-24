@@ -6,7 +6,6 @@ import React, {
   useState,
 } from "react";
 
-import { useAuth } from "@/context/AuthContext";
 import { getCachedBibleBook, saveCachedBibleBook } from "./study/studyMaterialCache.js";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
@@ -146,20 +145,6 @@ function normalizeWebBook(payload, fallbackBookName) {
    DASHBOARD LABELS
 ========================================================= */
 
-const dashboardLabels = {
-  home: "Home",
-  faith: "Faith",
-  education: "Education",
-  shamba: "Shamba",
-  biashara: "Biashara",
-  community: "Community",
-  events: "Events",
-  prophecy: "Prophecy",
-  referential: "Referential",
-  profile: "Profile",
-  settings: "Settings",
-};
-
 /* =========================================================
    REUSABLE BACK BUTTON
 ========================================================= */
@@ -225,7 +210,6 @@ export default function BibleDashboard({
   onBack,
   onOpenAI,
 }) {
-  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -398,12 +382,6 @@ export default function BibleDashboard({
   /* =======================================================
      USER
   ======================================================= */
-
-  const displayName =
-    user?.fullName?.trim() ||
-    user?.name?.trim() ||
-    user?.username?.trim() ||
-    "Guest";
 
   /* =======================================================
      PREVIOUS DASHBOARD
