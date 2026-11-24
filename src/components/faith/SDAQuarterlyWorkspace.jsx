@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Copy, Filter, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Copy, Filter, X } from "lucide-react";
 import { App } from "@capacitor/app";
 import SdaLessonAIChat from "./SdaLessonAIChat.jsx";
 import FaithWorkspaceLayout from "./workspace/FaithWorkspaceLayout.jsx";
