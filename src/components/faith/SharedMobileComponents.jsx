@@ -6,7 +6,7 @@ const touch = "min-h-11 min-w-11 touch-manipulation rounded-xl focus-visible:out
 
 export function ConnectivityPill({
   state = "online",
-  offlineText = "Offline copy available",
+  offlineText,
   poorText = "Slow connection",
   onClick,
   ariaLabel,
@@ -14,9 +14,10 @@ export function ConnectivityPill({
   if (state === "online") return null;
   const offline = state === "offline";
   const Icon = offline ? WifiOff : SignalLow;
+  const offlineLabel = offlineText || (quarter && year ? "Offline copy · Q" + quarter + " " + year : "Offline copy available");
   const content = <>
     <Icon size={14} className="shrink-0"/>
-    <span>{offline ? offlineText : poorText}</span>
+    <span>{offline ? offlineLabel : poorText}</span>
   </>;
   const className = "inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full border border-amber-300/80 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200";
   return onClick
