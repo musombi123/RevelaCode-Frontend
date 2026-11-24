@@ -330,3 +330,12 @@ The public NEXORA entry is
 wildcard **Rewrite** rules on the existing Render Static Site as documented
 in `docs/NEXORA_PATH_BASED_HOSTING.md`. RevelaCode's service worker skips
 the NEXORA path so it cannot intercept NEXORA assets or sessions.
+
+## Repository governance
+
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Contributing](CONTRIBUTING.md)
+
+## Licence
+
+The frontend is released under the **MIT License**. See [LICENSE](LICENSE) for the full licence text. This is the frontend's explicit open-source licence; other RevelaCode repositories have their own licensing terms. Third-party dependencies and assets remain under their own licences.
