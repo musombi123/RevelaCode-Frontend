@@ -176,7 +176,7 @@ export function LessonReader({ material, day, onClose, onMarkDone, onNextDay, on
   useEffect(() => {
     if (!focusSection) return;
     const target = focusSection === "notes" ? notesRef.current : memoryRef.current;
-    if (target) requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "center" }));
+    if (target) { const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches; requestAnimationFrame(() => target.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" })); }
   }, [focusSection]);
   const saveNotes = value => {
     setNotes(value);
