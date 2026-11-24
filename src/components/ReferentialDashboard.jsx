@@ -262,6 +262,7 @@ export default function ReferentialDashboard({ user, onOpenAI, onNavigate, onBac
     onNavigate?.("faith");
   };
 
+  const chainContext = activeChain || chains[0] || null;
   const askForContext = chain => {
     if (!chain) {
       setAiMaterial({
