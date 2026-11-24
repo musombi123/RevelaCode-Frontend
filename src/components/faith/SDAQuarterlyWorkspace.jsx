@@ -209,16 +209,12 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
 
   const selectedLesson = lessonByDay[selectedDay] || sortedMaterials[0] || null;
   const selectedMeta = lessonMetadata(selectedLesson);
-  const selectedId = lessonId(selectedLesson);
   const selectedDayIndex = WEEKDAYS.indexOf(selectedDay);
   const todayDay = currentKenyaWeekday();
-  const todayIndex = WEEKDAYS.indexOf(todayDay);
-  const doneDays = Object.fromEntries(WEEKDAYS.map(day => {
-    const id = lessonId(lessonByDay[day]);
-    return [day, Boolean(progress[id || day])];
-  }));
+  const completionKey = (material, day) => (lessonId(material) || "lesson") + "::" + day;
+  const doneDays = Object.fromEntries(WEEKDAYS.map(day => [day, Boolean(progress[completionKey(lessonByDay[day], day)])]));
   const streak = (() => {
-    let start = doneDays[todayDay] ? todayIndex : todayIndex - 1;
+    let start = doneDays[selectedDay] ? selectedDayIndex : selectedDayIndex - 1;
     let count = 0;
     while (start >= 0 && doneDays[WEEKDAYS[start]]) { count += 1; start -= 1; }
     return count;
@@ -266,9 +262,8 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
     };
   }, [aiLesson, readerDay]);
 
-  const saveDayDone = material => {
-    const id = lessonId(material) || readerDay;
-    const next = { ...progress, [id]: true };
+  const saveDayDone = (material, day = readerDay) => {
+    const next = { ...progress, [completionKey(material, day)]: true };
     persistProgress(next);
   };
 
@@ -289,7 +284,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
 
   const markDayDone = () => {
     if (!readerLesson) return;
-    saveDayDone(readerLesson);
+    saveDayDone(readerLesson, readerDay);
   };
 
   const todayMaterial = lessonByDay[selectedDay];
