@@ -294,10 +294,11 @@ export default function FaithAtlas({ userId = "guest", onOpenReference, onOpenAI
   const [promptOpen, setPromptOpen] = useState(false);
   const [copyNotice, setCopyNotice] = useState("");
   const [referentialChain] = useState(() => {
+    if (typeof window === "undefined") return null;
     try {
       const pending = JSON.parse(localStorage.getItem("revelacode_referential_pending_atlas_chain") || "null");
       if (pending && Array.isArray(pending.passages)) {
-        localStorage.removeItem("revelacode_referential_pending_atlas_chain");
+        try { localStorage.removeItem("revelacode_referential_pending_atlas_chain"); } catch {}
         return pending;
       }
     } catch {}
