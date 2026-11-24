@@ -16,7 +16,8 @@ import {
 
 import { ArrowLeft, Settings, Sparkles, X } from "lucide-react";
 import { App } from "@capacitor/app";
-import { OfflinePill, AskBar, SearchRow, ContinueCard, BookGrid, VerseToolbar, StudyPanel as BibleStudyPanel } from "./faith/bible-mobile/BibleMobileComponents.jsx";
+import { SearchRow, ContinueCard, BookGrid, VerseToolbar, StudyPanel as BibleStudyPanel } from "./faith/bible-mobile/BibleMobileComponents.jsx";
+import { ConnectivityPill, AskBar } from "./faith/SharedMobileComponents.jsx";
 
 /* =========================================================
    BIBLE BOOKS
@@ -969,8 +970,8 @@ export default function BibleDashboard({
         <header className="flex items-center justify-between gap-2 px-1 pt-1">
           <div className="flex min-w-0 items-center gap-2"><button type="button" aria-label="Back" onClick={viewLevel==="books"?handleGlobalBack:handleBack} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-white"><ArrowLeft size={19}/></button><div className="min-w-0"><h1 className="text-lg font-black leading-6">Bible</h1><p className="truncate text-xs text-slate-500 dark:text-slate-400">Faith / Bible</p></div></div><button type="button" onClick={()=>setVersionSheet(true)} aria-label="Bible settings" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"><Settings size={18}/></button>
         </header>
-        <OfflinePill online={online} onDetails={()=>setVerseActionsMessage("Your KJV text is available offline. Live study resources and RevelaAI require internet.")}/>
-        <AskBar online={online} onAsk={askBibleAI}/>
+        <ConnectivityPill state={online ? "online" : "offline"} offlineText="Offline · KJV saved" onClick={()=>setVerseActionsMessage("Your KJV text is available offline. Live study resources and RevelaAI require internet.")} ariaLabel="Offline. KJV saved. Tap for details."/>
+        <AskBar online={online} onAsk={askBibleAI} placeholder="Ask RevelaAI about Scripture…" offlinePlaceholder="Ask AI (needs internet)" storageKey="revelacode_bible_saved_questions_v1"/>
         <SearchRow value={searchInput} onChange={e=>{setSearchInput(e.target.value);setSearchError("");}} onSearch={handleSearch} version={bibleVersion} onVersionChange={()=>setVersionSheet(true)} disabled={loadingVersionBook}/>
         {bibleVersion==="web" && <p className="px-1 text-xs leading-5 text-slate-500">WEB loads online; KJV remains offline. <button type="button" onClick={()=>setSourceView({url:"https://ebible.org/web/",title:"About the World English Bible"})} className="font-semibold underline">About WEB</button></p>}
         {loadingVersionBook && <p role="status" className="rounded-xl bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">Loading text…</p>}
