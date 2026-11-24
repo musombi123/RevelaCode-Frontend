@@ -120,7 +120,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
 
   const run = async (key, fn, success, options = {}) => {
     if (options.requiresProject !== false && (!cloudProjectActive || !activeProject)) {
-      setError("Save or open a NEXORA cloud project before running this operation.");
+      setError("Save or open a project on your paired computer before running this operation.");
       return;
     }
     setBusy(key); setError("");
@@ -275,7 +275,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
         </section>
         <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
-          {!cloudProjectActive && <div className="border border-amber-700/60 bg-amber-950/20 p-3 text-xs text-amber-100">Save or open your NEXORA cloud project before using paid Creator Flow tools.</div>}
+          {!cloudProjectActive && <div className="border border-amber-700/60 bg-amber-950/20 p-3 text-xs text-amber-100">Connect the paired computer and open a saved project before using paid Creator Flow tools.</div>}
           {error && <div role="alert" className="border border-rose-800/60 bg-rose-950/20 p-2 text-xs text-rose-200">{error}</div>}
           <div className="grid gap-2 md:grid-cols-2">
             <label className="text-[10px] text-slate-400">PROJECT MODE<select value={workflow.mode} onChange={(e)=>update({mode:e.target.value})} className="mt-1 w-full border border-slate-700 bg-[#080d12] p-2 text-xs text-white"><option value="story">Original story / document</option><option value="movie">Movie-to-game adaptation</option></select></label>
