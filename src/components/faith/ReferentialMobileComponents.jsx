@@ -16,7 +16,7 @@ export function StartChainCard({ value, onChange, onStart, quickThemes = ["Sanct
   return <section className={card + " space-y-3 p-4 shadow-sm"}>
     <div className="flex items-center gap-2"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"><Plus size={18}/></span><div className="min-w-0"><h2 className="text-sm font-black">Start a chain</h2><p className="text-xs text-slate-500 dark:text-slate-400">Begin with a verse or a Bible theme.</p></div></div>
     <form onSubmit={event => { event.preventDefault(); onStart?.(); }} className="flex min-w-0 flex-col gap-2 sm:flex-row">
-      <input value={value} onChange={event => onChange?.(event.target.value)} placeholder="Daniel 8:14 or Sanctuary" aria-label="Starting Bible passage or theme" className={inputClass + " flex-1"}/>
+      <input id="referential-chain-start-input" value={value} onChange={event => onChange?.(event.target.value)} placeholder="Daniel 8:14 or Sanctuary" aria-label="Starting Bible passage or theme" className={inputClass + " flex-1"}/>
       <button type="submit" disabled={!String(value || "").trim()} className={touch + " shrink-0 bg-indigo-600 px-4 text-sm font-black text-white disabled:opacity-40"}>Start chain <ArrowRight size={15} className="ml-1"/></button>
     </form>
     <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Quick themes">
