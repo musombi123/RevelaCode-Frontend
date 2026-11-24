@@ -6,7 +6,7 @@ import FaithWorkspaceLayout from "./workspace/FaithWorkspaceLayout.jsx";
 import { readCachedApiResponse, writeCachedApiResponse } from "@/services/offlineHubSync.js";
 import {
   AskBar, ConnectivityPill, EmptyQuarter, LessonReader, QuarterPicker, WeekCard
-} from "./quarterly-mobile/SDAQuarterlyMobileComponents.jsx";
+} from "./SDAQuarterlyMobileComponents.jsx";
 
 const API = (
   import.meta.env.VITE_API_URL ||
