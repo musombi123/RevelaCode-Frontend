@@ -138,7 +138,7 @@ export function QuarterPicker({ year, quarter, open, onOpenChange, onApply, onRe
 }
 
 const BIBLE_BOOKS = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"];
-const REFERENCE_PATTERN = new RegExp("\\b(" + BIBLE_BOOKS.slice().sort((a,b)=>b.length-a.length).map(name=>name.replace(/[.*+?^${}()|[\\]\\\\]/g,"\\\\$&")).join("|") + ")\\s+\\d{1,3}:\\d{1,3}(?:[-–]\\d{1,3})?\\b","gi");
+const REFERENCE_PATTERN = new RegExp("\\b(" + BIBLE_BOOKS.slice().sort((a,b)=>b.length-a.length).join("|") + ")\\s+\\d{1,3}:\\d{1,3}(?:[-–]\\d{1,3})?\\b","gi");
 function renderReading(text, onReference) {
   const source = String(text || "");
   const chunks = [];
@@ -208,7 +208,7 @@ export function EmptyQuarter({ year, quarter, loading, lastUpdated, onDownload }
     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-300"><Download size={22}/></div>
     <h3 className="text-base font-black">Download this quarter to read offline</h3>
     <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Save Q{quarter} {year} lessons on this device when they are available from the Study service.</p>
-    <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-label="Quarter download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loading ? 50 : lastUpdated ? 100 : 0}><div className={"h-full rounded-full bg-amber-500 " + (loading ? "w-1/2 animate-pulse motion-reduce:animate-none" : lastUpdated ? "w-full" : "w-0")}/></div>
+    <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-label="Quarter download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loading ? undefined : lastUpdated ? 100 : 0} aria-valuetext={loading ? "Downloading quarter" : lastUpdated ? "Quarter saved" : "Not downloaded"}><div className={"h-full rounded-full bg-amber-500 " + (loading ? "w-1/2 animate-pulse motion-reduce:animate-none" : lastUpdated ? "w-full" : "w-0")}/></div>
     <button type="button" onClick={onDownload} disabled={loading} className={touch + " inline-flex w-full items-center justify-center gap-2 bg-amber-500 px-4 text-sm font-black text-amber-950 disabled:opacity-50"}>{loading ? <RefreshCw size={16} className="animate-spin motion-reduce:animate-none"/> : <Download size={16}/>} {loading ? "Downloading…" : "Download quarter"}</button>
     <p className="text-xs text-slate-500 dark:text-slate-400">Last updated: {lastUpdated || "Not downloaded on this device yet"}</p>
   </section>;
