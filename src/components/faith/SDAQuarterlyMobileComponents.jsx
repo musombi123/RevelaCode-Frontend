@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown,
-  Clock3, Copy, Download, ExternalLink, FileText, RefreshCw, SignalLow,
-  Sparkles, WifiOff, X, Zap
+  ArrowRight, BookOpen, ChevronDown, Download, ExternalLink, RefreshCw,
+  SignalLow, Sparkles, WifiOff, X
 } from "lucide-react";
 
 const card = "rounded-2xl border border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100";
