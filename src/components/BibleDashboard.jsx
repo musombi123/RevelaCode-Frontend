@@ -271,11 +271,9 @@ export default function BibleDashboard({
   const closeSheets = () => { setVersionSheet(false); setChapterSheet(false); setAiSheet(false); };
   useEffect(() => { const onEscape = (event) => { if (event.key !== "Escape") return; if (versionSheet || aiSheet) closeSheets(); else if (viewLevel !== "books") { setChapterSheet(false); handleBack(); } }; document.addEventListener("keydown", onEscape); return () => document.removeEventListener("keydown", onEscape); }, [versionSheet, chapterSheet, aiSheet, viewLevel]);
   useEffect(() => { let subscription; App.addListener("backButton", () => { if (versionSheet || aiSheet) closeSheets(); else if (viewLevel !== "books") { setChapterSheet(false); handleBack(); } else handleGlobalBack(); }).then(result => { subscription = result; }).catch(() => {}); return () => { subscription?.remove?.(); }; }, [versionSheet, chapterSheet, aiSheet, viewLevel]);
-  const currentReference = selectedBook && selectedChapterIndex !== null ? selectedBook.book + " " + (selectedChapterIndex + 1) : "Bible";
   const askBibleAI = (question, verse = selectedVerse) => { const ref = verse && selectedBook ? selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + verse.verse : currentReference; const payload = { question, contextType: "bible", contextData: { reference: ref, version: bibleVersion.toUpperCase(), verseText: verse?.text || "" } }; const complex = question.trim().split(" ").filter(Boolean).length > 25 || ["compare","explain in depth","historical","write","analyze","research"].some(term => question.toLowerCase().includes(term)); if (complex) { setAiSheet(true); window.__revelacodeBibleQuestion = payload; return; } onOpenAI?.(payload); };
   const changeVersion = (value) => handleBibleVersionChange({ target: { value } });
   const askAboutVerse = () => { const question = selectedVerse && selectedBook ? "Explain " + selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse + " in its context." : "Help me understand this Bible chapter in context."; const contextData = { reference: selectedVerse && selectedBook ? selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse : currentReference, version: bibleVersion.toUpperCase(), verseText: selectedVerse?.text || "" }; window.__revelacodeBibleQuestion = { question, contextType: "bible", contextData }; setAiSheet(true); };
-  const bookEntries = bookKeys.map(key => ({ key, name: displayedBibleData[key]?.book || key }));
   const resumeReading = () => { if (cachedBibleChapter?.book && Number.isInteger(cachedBibleChapter.chapterIndex)) { setSelectedBookKey(cachedBibleChapter.book); setSelectedChapterIndex(cachedBibleChapter.chapterIndex); setVerses(cachedBibleChapter.verses || bibleData[cachedBibleChapter.book]?.chapters?.[cachedBibleChapter.chapterIndex]?.verses || []); setViewLevel("verses"); setHighlightedVerseRange(null); return; } const john = bookKeys.find(k => normalizeBookName(displayedBibleData[k]?.book) === "john"); if (john) { handleBookClick(john).then(() => handleChapterClick(0)); } };
   const actOnVerse = async (action) => {
     if (!selectedVerse || !selectedBook) return;
@@ -889,6 +887,10 @@ export default function BibleDashboard({
     displayedBibleData[
       selectedBookKey
     ];
+
+  const currentReference = selectedBook && selectedChapterIndex !== null ? selectedBook.book + " " + (selectedChapterIndex + 1) : "Bible";
+  const bookEntries = bookKeys.map(key => ({ key, name: displayedBibleData[key]?.book || key }));
+
 
   /* =======================================================
      SORT OLD TESTAMENT
