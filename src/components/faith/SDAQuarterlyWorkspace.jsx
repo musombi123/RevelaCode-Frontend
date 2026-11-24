@@ -367,7 +367,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
         </header>
 
         <ConnectivityPill state={connectionState} quarter={quarter} year={year}/>
-        <AskBar online={connectionState === "online"} onAsk={question => askQuestion(question, selectedLesson)}/>
+        <AskBar online={connectionState !== "offline" && (typeof navigator === "undefined" || navigator.onLine !== false)} onAsk={question => askQuestion(question, selectedLesson)}/>
 
         <WeekCard
           loading={loading && !sortedMaterials.length}
@@ -401,9 +401,9 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
           <div className="flex items-center justify-between gap-2 px-1"><div><h2 className="text-sm font-black">Quarter archive</h2><p className="text-xs text-slate-500 dark:text-slate-400">{sortedMaterials.length} lesson{sortedMaterials.length === 1 ? "" : "s"} · Q{quarter} {year}</p></div><a href={sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">Official source <ExternalLink size={13}/></a></div>
           {loading && !sortedMaterials.length ? <div className="space-y-2">{Array.from({length:4},(_,i)=><div key={i} className={ "h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-900 motion-reduce:animate-none"}/>)}</div> :
             sortedMaterials.length ? <div className="space-y-2">{sortedMaterials.map((material,index)=>{
-              const meta=lessonMetadata(material); const id=lessonId(material)||String(index); const done=Boolean(progress[id]); const dayLabel=meta.day||meta.weekday||"Daily lesson"; const title=material?.title||meta.lesson_title||"Sabbath School lesson";
+              const meta=lessonMetadata(material); const id=lessonId(material)||String(index); const done=WEEKDAYS.some(day => Boolean(progress[completionKey(material, day)])); const dayLabel=meta.day||meta.weekday||"Daily lesson"; const title=material?.title||meta.lesson_title||"Sabbath School lesson";
               return <button key={id+"-"+index} type="button" onClick={()=>openReader(material, WEEKDAYS.find(day=>String(dayLabel).toLowerCase().startsWith(day.toLowerCase())) || selectedDay)} className="flex min-h-[76px] w-full min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left dark:border-slate-800 dark:bg-slate-900">
-                <span className={"h-3 w-3 shrink-0 rounded-full "+(done?"bg-emerald-500":"bg-slate-300 dark:bg-slate-700")}/>
+                <span className="flex shrink-0 items-center gap-0.5" aria-label={done ? "Progress started" : "Not started"}>{WEEKDAYS.map(day=><span key={day} title={day} className={"h-2 w-2 rounded-full "+(progress[completionKey(material, day)]?"bg-emerald-500":"bg-slate-300 dark:bg-slate-700")}/>)}</span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-[0.65rem] font-bold uppercase tracking-wide text-slate-500">{meta.lesson_number ? "Lesson "+meta.lesson_number : "Lesson "+(index+1)} · {formatLessonDate(meta.lesson_date)}</span><span className="mt-1 block line-clamp-2 text-sm font-bold">{title}</span><span className="mt-0.5 block text-xs text-slate-500">{dayLabel}</span></span>
                 <ArrowRight size={16} className="shrink-0 text-slate-400"/>
               </button>;
@@ -414,7 +414,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
       {readerLesson && <LessonReader
         material={readerLesson}
         day={readerDay}
-        completed={Boolean(progress[lessonId(readerLesson)||readerDay])}
+        completed={Boolean(progress[completionKey(readerLesson, readerDay)])}
         notesKey={notesKey}
         focusSection={readerFocus}
         activeReference={activeReference}
@@ -426,7 +426,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
         onOpenReference={setActiveReference}
         onCloseReference={() => setActiveReference("")}
         onOpenInBible={openReferenceInBible}
-        onExternalOpen={() => openLessonInStudy(readerLesson)}
+        onExternalOpen={typeof onOpen === "function" ? () => openLessonInStudy(readerLesson) : null}
       />}
 
       {aiSheetOpen && aiLesson && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/50 p-2" role="dialog" aria-modal="true" aria-label="SDA lesson AI" onClick={() => setAiSheetOpen(false)}>
