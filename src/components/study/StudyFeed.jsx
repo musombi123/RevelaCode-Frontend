@@ -14,7 +14,6 @@ import {
   FolderOpen,
   RefreshCw,
   Search,
-  AlertCircle,
   GraduationCap,
 } from "lucide-react";
 
