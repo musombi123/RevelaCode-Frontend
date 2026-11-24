@@ -720,7 +720,7 @@ export default function FaithDashboard({
      INTERNAL FAITH / STUDY NAVIGATION
   ======================================================= */
 
-  const [faithSection, setFaithSection] = useState("home");
+  const [faithSection, setFaithSection] = useState(() => {\n    try { return localStorage.getItem("revelacode_referential_pending_atlas_chain") ? "atlas" : "home"; }\n    catch { return "home"; }\n  });
   const [homeKeyboardOpen, setHomeKeyboardOpen] = useState(false);
   const homeSearchRef = useRef(null);
   const [studyTopic, setStudyTopic] = useState("all");
