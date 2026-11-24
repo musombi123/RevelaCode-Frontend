@@ -720,7 +720,16 @@ export default function FaithDashboard({
      INTERNAL FAITH / STUDY NAVIGATION
   ======================================================= */
 
-  const [faithSection, setFaithSection] = useState("home");
+  const [faithSection, setFaithSection] = useState(() => {
+    if (typeof window === "undefined") return "home";
+    try { return localStorage.getItem("revelacode_referential_pending_atlas_chain") ? "atlas" : "home"; }
+    catch { return "home"; }
+  });
+  useEffect(() => {
+    const openPendingAtlas = () => setFaithSection("atlas");
+    window.addEventListener("revelacode:open-faith-atlas", openPendingAtlas);
+    return () => window.removeEventListener("revelacode:open-faith-atlas", openPendingAtlas);
+  }, []);
   const [homeKeyboardOpen, setHomeKeyboardOpen] = useState(false);
   const homeSearchRef = useRef(null);
   const [studyTopic, setStudyTopic] = useState("all");
