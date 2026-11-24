@@ -1,10 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { ArrowRight, BookOpen, ChevronDown, Download, ExternalLink, RefreshCw, X } from "lucide-react";
 import { ConnectivityPill, AskBar } from "./SharedMobileComponents.jsx";
 export { ConnectivityPill, AskBar };
-import {
-  ArrowRight, BookOpen, ChevronDown, Download, ExternalLink, RefreshCw,
-  X
-} from "lucide-react";
 
 const card = "rounded-2xl border border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100";
 const touch = "min-h-11 min-w-11 touch-manipulation rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 motion-reduce:transition-none";
