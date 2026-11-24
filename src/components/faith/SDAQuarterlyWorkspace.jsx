@@ -389,10 +389,10 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
 
         {error && <div role="alert" className="flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200"><span className="min-w-0">{error}</span><button type="button" onClick={() => loadQuarter()} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-rose-700 px-3 text-xs font-bold text-white">Retry</button></div>}
 
-        {!sortedMaterials.length && !loading && !error && <EmptyQuarter year={year} quarter={quarter} loading={loading || refreshing} lastUpdated={formatUpdated(lastUpdated)} onDownload={() => loadQuarter()}/>}
+        {!sortedMaterials.length && !loading && <EmptyQuarter year={year} quarter={quarter} loading={loading || refreshing} lastUpdated={formatUpdated(lastUpdated)} onDownload={() => loadQuarter()}/>}
 
         <section className="space-y-2">
-          <div className="flex items-center justify-between gap-2 px-1"><div><h2 className="text-sm font-black">Quarter archive</h2><p className="text-xs text-slate-500 dark:text-slate-400">{sortedMaterials.length} lesson{sortedMaterials.length === 1 ? "" : "s"} · Q{quarter} {year}</p></div><a href={sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">Official source <ExternalLink size={13}/></a></div>
+          <div className="flex items-center justify-between gap-2 px-1"><div><h2 className="text-sm font-black">Quarter archive</h2><p className="text-xs text-slate-500 dark:text-slate-400">{sortedMaterials.length} lesson{sortedMaterials.length === 1 ? "" : "s"} · Q{quarter} {year}{lastUpdated ? " · Updated " + formatUpdated(lastUpdated) : ""}</p></div><a href={sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">Official source <ExternalLink size={13}/></a></div>
           {loading && !sortedMaterials.length ? <div className="space-y-2">{Array.from({length:4},(_,i)=><div key={i} className={ "h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-900 motion-reduce:animate-none"}/>)}</div> :
             sortedMaterials.length ? <div className="space-y-2">{sortedMaterials.map((material,index)=>{
               const meta=lessonMetadata(material); const id=lessonId(material)||String(index); const done=WEEKDAYS.some(day => Boolean(progress[completionKey(material, day)])); const dayLabel=meta.day||meta.weekday||"Daily lesson"; const title=material?.title||meta.lesson_title||"Sabbath School lesson";
@@ -401,7 +401,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
                 <span className="min-w-0 flex-1"><span className="block truncate text-[0.65rem] font-bold uppercase tracking-wide text-slate-500">{meta.lesson_number ? "Lesson "+meta.lesson_number : "Lesson "+(index+1)} · {formatLessonDate(meta.lesson_date)}</span><span className="mt-1 block line-clamp-2 text-sm font-bold">{title}</span><span className="mt-0.5 block text-xs text-slate-500">{dayLabel}</span></span>
                 <ArrowRight size={16} className="shrink-0 text-slate-400"/>
               </button>;
-            })}</div> : <EmptyQuarter year={year} quarter={quarter} loading={loading || refreshing} lastUpdated={formatUpdated(lastUpdated)} onDownload={() => loadQuarter()}/>}
+            })}</div> : null}
         </section>
       </main>
 
