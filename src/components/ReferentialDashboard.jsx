@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { App } from "@capacitor/app";
 import {
-  ArrowLeft, Copy, Filter, Layers, Save, X
+  ArrowLeft, Copy, Filter, X
 } from "lucide-react";
 import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
 import StudyReader from "./study/StudyReader.jsx";
@@ -119,7 +119,7 @@ export default function ReferentialDashboard({ user, onOpenAI, onNavigate, onBac
   };
 
   const handleBack = useCallback(() => {
-    if (activeSheet) { closeSheet(); return; }
+    if (activeSheet) { setActiveSheet(""); setPassageDetail(null); return; }
     if (activeChain) { setActiveChain(null); setSavedToast(false); setSaveError(""); return; }
     if (selectedMaterial) { setSelectedMaterial(null); return; }
     if (typeof onBack === "function") onBack();
@@ -427,7 +427,7 @@ export default function ReferentialDashboard({ user, onOpenAI, onNavigate, onBac
     {activeSheet === "ai" && aiMaterial && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/50 p-2" role="dialog" aria-modal="true" aria-label="Referential AI assistant" onClick={closeSheet}>
       <section className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] dark:bg-slate-950" onClick={event=>event.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[0.65rem] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">RevelaAI · Referential</p><h2 className="truncate text-base font-black">{aiMaterial.title}</h2></div><button type="button" onClick={closeSheet} aria-label="Close AI sheet" className={touch}><X size={18}/></button></div>
-        <SdaLessonAIChat key={aiMaterial.id || aiMaterial.title} material={aiMaterial} initialQuestion={aiQuestion} onClose={closeSheet}/>
+        <SdaLessonAIChat key={(aiMaterial.id || aiMaterial.title) + "-" + aiQuestion} material={aiMaterial} initialQuestion={aiQuestion} onClose={closeSheet}/>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button type="button" onClick={openInRevelaAI} className={touch + " bg-indigo-600 px-3 text-xs font-black text-white"}>Open in RevelaAI</button>
           {(aiQuestion.trim().split(/\s+/).length > 25 || /\b(compare|explain in depth|analyse|analyze|research|historical)\b/i.test(aiQuestion)) && <button type="button" onClick={copyQuestion} className={touch + " gap-1.5 border border-slate-200 px-3 text-xs font-bold dark:border-slate-700"}><Copy size={14}/>{aiCopied ? "Copied" : "Copy question"}</button>}
