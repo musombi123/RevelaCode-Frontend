@@ -295,7 +295,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
   };
 
   const todayMaterial = lessonByDay[selectedDay];
-  const notesKey = `revelacode_sda_lesson_notes_v1:${year}:${quarter}:${lessonId(readerLesson) || readerDay}`;
+  const notesKey = `revelacode_sda_lesson_notes_v1:${year}:${quarter}:${lessonId(readerLesson) || "lesson"}:${readerDay}`;
   const aiPromptIsComplex = aiQuestion.trim().split(/\s+/).length > 25 || /\b(compare|explain in depth|historical|write|analyze|research)\b/i.test(aiQuestion);
 
   const openInRevelaAI = () => {
@@ -396,7 +396,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
 
         {error && <div role="alert" className="flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200"><span className="min-w-0">{error}</span><button type="button" onClick={() => loadQuarter()} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-rose-700 px-3 text-xs font-bold text-white">Retry</button></div>}
 
-        {!sortedMaterials.length && !loading && <EmptyQuarter year={year} quarter={quarter} loading={loading || refreshing} lastUpdated={formatUpdated(lastUpdated)} onDownload={() => loadQuarter()}/>}
+        {!sortedMaterials.length && !loading && <EmptyQuarter year={year} quarter={quarter} loading={loading || refreshing} lessonCount={sortedMaterials.length} lastUpdated={formatUpdated(lastUpdated)} onDownload={() => loadQuarter()}/>}
 
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-2 px-1"><div><h2 className="text-sm font-black">Quarter archive</h2><p className="text-xs text-slate-500 dark:text-slate-400">{sortedMaterials.length} lesson{sortedMaterials.length === 1 ? "" : "s"} · Q{quarter} {year}{lastUpdated ? " · Updated " + formatUpdated(lastUpdated) : ""}</p></div><a href={sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">Official source <ExternalLink size={13}/></a></div>
