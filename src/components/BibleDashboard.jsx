@@ -274,7 +274,26 @@ export default function BibleDashboard({
   const askBibleAI = (question, verse = selectedVerse) => { const ref = verse && selectedBook ? selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + verse.verse : currentReference; const payload = { question, contextType: "bible", contextData: { reference: ref, version: bibleVersion.toUpperCase(), verseText: verse?.text || "" } }; const complex = question.trim().split(" ").filter(Boolean).length > 25 || ["compare","explain in depth","historical","write","analyze","research"].some(term => question.toLowerCase().includes(term)); if (complex) { setAiSheet(true); window.__revelacodeBibleQuestion = payload; return; } onOpenAI?.(payload); };
   const changeVersion = (value) => handleBibleVersionChange({ target: { value } });
   const askAboutVerse = () => { const question = selectedVerse && selectedBook ? "Explain " + selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse + " in its context." : "Help me understand this Bible chapter in context."; const contextData = { reference: selectedVerse && selectedBook ? selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse : currentReference, version: bibleVersion.toUpperCase(), verseText: selectedVerse?.text || "" }; window.__revelacodeBibleQuestion = { question, contextType: "bible", contextData }; setAiSheet(true); };
-  const resumeReading = () => { if (cachedBibleChapter?.book && Number.isInteger(cachedBibleChapter.chapterIndex)) { setSelectedBookKey(cachedBibleChapter.book); setSelectedChapterIndex(cachedBibleChapter.chapterIndex); setVerses(cachedBibleChapter.verses || bibleData[cachedBibleChapter.book]?.chapters?.[cachedBibleChapter.chapterIndex]?.verses || []); setViewLevel("verses"); setHighlightedVerseRange(null); return; } const john = bookKeys.find(k => normalizeBookName(displayedBibleData[k]?.book) === "john"); if (john) { handleBookClick(john).then(() => handleChapterClick(0)); } };
+  const resumeReading = () => {
+    if (cachedBibleChapter?.book && Number.isInteger(cachedBibleChapter.chapterIndex)) {
+      setSelectedBookKey(cachedBibleChapter.book);
+      setSelectedChapterIndex(cachedBibleChapter.chapterIndex);
+      setVerses(cachedBibleChapter.verses || bibleData[cachedBibleChapter.book]?.chapters?.[cachedBibleChapter.chapterIndex]?.verses || []);
+      setViewLevel("verses");
+      setHighlightedVerseRange(null);
+      return;
+    }
+    const john = bookKeys.find(key => normalizeBookName(displayedBibleData[key]?.book) === "john");
+    if (!john) return;
+    if (bibleVersion === "web" && !webData[john]) { handleBookClick(john); setChapterSheet(true); return; }
+    const firstChapter = displayedBibleData[john]?.chapters?.[0];
+    if (!firstChapter) { handleBookClick(john); setChapterSheet(true); return; }
+    setSelectedBookKey(john);
+    setSelectedChapterIndex(0);
+    setVerses(firstChapter.verses || []);
+    setViewLevel("verses");
+    setHighlightedVerseRange(null);
+  };
   const actOnVerse = async (action) => {
     if (!selectedVerse || !selectedBook) return;
     const ref = selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse;
