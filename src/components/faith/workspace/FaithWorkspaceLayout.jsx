@@ -647,7 +647,7 @@ export function StudyPanel({ page = "faith", contextData = {}, tabs }) {
 export default function FaithWorkspaceLayout({
   page, title, description, filterChips, primaryActionLabel, onPrimaryAction, onBack,
   onOpenAI, onNavigate, onHome, onStudy, onMission, onMe, contextData = {},
-  placeholder, children, panelTabs, panel = true,
+  placeholder, children, panelTabs, panel = true, showOfflineBanner = true, showHeader = true, showAskBar = true, hideBottomNav = false,
 }) {
   const meta = PAGE_META[page] || {};
   const safeContextData = useMemo(() => sanitizeContextData(contextData), [contextData]);
@@ -713,9 +713,9 @@ export default function FaithWorkspaceLayout({
 
   return (
     <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-clip pb-24 sm:space-y-5 sm:px-1 sm:pb-6 " + (nativeAndroid ? "faith-android-shell min-h-0 px-3 " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900") : "")}>
-      <FaithOfflineBanner offline={offline} />
-      <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} onHome={goHome} />
-      <InlineAskBar contextType={page} contextData={safeContextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
+      {showOfflineBanner && <FaithOfflineBanner offline={offline} />}
+      {showHeader && <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} onHome={goHome} />}
+      {showAskBar && <InlineAskBar contextType={page} contextData={safeContextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />}
       <div className={panel ? ("grid min-w-0 grid-cols-1 items-start gap-4 " + (nativeAndroid ? "" : "lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]")) : "min-w-0"}>
         <main data-faith-workspace-content className={"min-w-0 space-y-4 " + (nativeAndroid ? "[&_.grid-cols-2]:!grid-cols-1 [&_.grid-cols-3]:!grid-cols-1 [&_.grid-cols-4]:!grid-cols-1" : "max-sm:[&_.grid-cols-2]:!grid-cols-1 max-sm:[&_.grid-cols-3]:!grid-cols-1 max-sm:[&_.grid-cols-4]:!grid-cols-1")}>{children}</main>
         {panel && <StudyPanel page={page} contextData={safeContextData} tabs={panelTabs} />}
@@ -737,7 +737,7 @@ export default function FaithWorkspaceLayout({
         </SheetBackdrop>
       )}
 
-      <FaithMobileBottomNav
+      {!hideBottomNav && <FaithMobileBottomNav
         active={navActive}
         hidden={keyboardOpen || Boolean(overlay)}
         onHome={goHome}
@@ -745,7 +745,7 @@ export default function FaithWorkspaceLayout({
         onAskAI={() => onOpenAI?.()}
         onMission={goMission}
         onMe={goMe}
-      />
+      />}
     </div>
   );
 }
