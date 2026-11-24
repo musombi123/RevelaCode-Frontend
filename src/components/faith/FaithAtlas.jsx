@@ -293,6 +293,16 @@ export default function FaithAtlas({ userId = "guest", onOpenReference, onOpenAI
   const [activeFilter, setActiveFilter] = useState("All");
   const [promptOpen, setPromptOpen] = useState(false);
   const [copyNotice, setCopyNotice] = useState("");
+  const [referentialChain] = useState(() => {
+    try {
+      const pending = JSON.parse(localStorage.getItem("revelacode_referential_pending_atlas_chain") || "null");
+      if (pending && Array.isArray(pending.passages)) {
+        localStorage.removeItem("revelacode_referential_pending_atlas_chain");
+        return pending;
+      }
+    } catch {}
+    return null;
+  });
 
   const visibleNodes = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -374,6 +384,11 @@ export default function FaithAtlas({ userId = "guest", onOpenReference, onOpenAI
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5"><Bookmark size={13} /> Local saves</span>
         </div>
       </section>
+
+      {referentialChain && <section className="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/25">
+        <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[0.65rem] font-black uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Opened from Referential</p><h3 className="mt-1 truncate text-base font-black text-slate-950 dark:text-white">{referentialChain.title || "Study chain"}</h3><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{referentialChain.passages.length} passages in this chain</p></div><span className="rounded-full bg-emerald-100 px-2 py-1 text-[0.6rem] font-black text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">Chain context</span></div>
+        <div className="mt-3 space-y-2">{referentialChain.passages.map((passage,index)=><div key={passage.id || passage.reference + "-" + index} className="rounded-xl border border-indigo-100 bg-white/80 p-3 dark:border-indigo-900/40 dark:bg-slate-950/50"><div className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-[0.65rem] font-black text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200">{index+1}</span><p className="min-w-0 truncate text-sm font-black text-slate-900 dark:text-white">{passage.reference}</p></div>{passage.relation && <p className="mt-1 text-[0.65rem] font-bold text-indigo-700 dark:text-indigo-300">{passage.relation}</p>}{passage.subtitle && <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{passage.subtitle}</p>}</div>)}</div>
+      </section>}
 
       <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
