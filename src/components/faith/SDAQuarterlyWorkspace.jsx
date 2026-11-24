@@ -332,7 +332,6 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
     return () => { document.removeEventListener("keydown", onEscape); subscription?.remove?.(); };
   }, [activeReference, aiSheetOpen, quarterPickerOpen, readerLesson, onBack, onNavigate]);
 
-  const currentDayDone = Boolean(progress[selectedId || selectedDay]);
   const resumeToday = () => openReader(todayMaterial, selectedDay);
   const showMemoryVerse = () => openReader(todayMaterial, selectedDay, "memory");
   const showMyNotes = () => openReader(todayMaterial, selectedDay, "notes");
