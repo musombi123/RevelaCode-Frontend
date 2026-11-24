@@ -20,7 +20,7 @@ export function StartChainCard({ value, onChange, onStart, quickThemes = ["Sanct
       <button type="submit" disabled={!String(value || "").trim()} className={touch + " shrink-0 bg-indigo-600 px-4 text-sm font-black text-white disabled:opacity-40"}>Start chain <ArrowRight size={15} className="ml-1"/></button>
     </form>
     <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Quick themes">
-      {quickThemes.map(theme => <button key={theme} type="button" onClick={() => onChange?.(theme)} className="min-h-10 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 active:bg-indigo-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:active:bg-indigo-950/40">{theme}</button>)}
+      {quickThemes.map(theme => <button key={theme} type="button" onClick={() => onChange?.(theme)} className="min-h-11 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 active:bg-indigo-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:active:bg-indigo-950/40">{theme}</button>)}
     </div>
   </section>;
 }
