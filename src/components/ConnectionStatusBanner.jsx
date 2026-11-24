@@ -33,17 +33,21 @@ export default function ConnectionStatusBanner() {
     const onOnline = () => showForFourSeconds(readInitialState());
     const onState = event => showForFourSeconds(event?.detail?.state);
     const onConnectionChange = () => showForFourSeconds(readInitialState());
+    const onPoor = () => showForFourSeconds("poor");
+    const onRestored = () => showForFourSeconds(readInitialState());
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
     window.addEventListener("revelacode:connection-state", onState);
-    window.addEventListener("revelacode:connection-poor", () => showForFourSeconds("poor"));
-    window.addEventListener("revelacode:connection-restored", () => showForFourSeconds(readInitialState()));
+    window.addEventListener("revelacode:connection-poor", onPoor);
+    window.addEventListener("revelacode:connection-restored", onRestored);
     navigator.connection?.addEventListener?.("change", onConnectionChange);
     if (state !== "online") showForFourSeconds(state);
     return () => {
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
       window.removeEventListener("revelacode:connection-state", onState);
+      window.removeEventListener("revelacode:connection-poor", onPoor);
+      window.removeEventListener("revelacode:connection-restored", onRestored);
       navigator.connection?.removeEventListener?.("change", onConnectionChange);
       if (dismissTimer.current) window.clearTimeout(dismissTimer.current);
     };
