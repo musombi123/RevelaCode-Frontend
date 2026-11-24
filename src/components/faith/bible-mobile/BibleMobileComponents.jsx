@@ -12,6 +12,7 @@ export function AskBar({ online, onAsk, storageKey = "revelacode_bible_saved_que
   const [question, setQuestion] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [toast, setToast] = useState(false);
+  const [savedConfirmation, setSavedConfirmation] = useState(false);
   useEffect(() => {
     if (!online) return;
     let saved = [];
@@ -28,7 +29,7 @@ export function AskBar({ online, onAsk, storageKey = "revelacode_bible_saved_que
       setExpanded(false);
       setToast(false);
       window.dispatchEvent(new CustomEvent("revelacode:bible-question-saved"));
-    } catch { setToast(true); }
+    } catch { setToast(true); setSavedConfirmation(false); }
   };
   return <div className="space-y-2">
     {!online ? <div className={"flex items-center gap-2 rounded-2xl px-3 py-2 " + base}><Sparkles size={16} className="text-indigo-500"/><input value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Ask AI (needs internet)" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-500" aria-label="Ask AI question"/><button type="button" onClick={save} disabled={!question.trim()} className={touch+" shrink-0 bg-amber-500 px-3 text-xs font-bold text-amber-950 disabled:opacity-40"}>Save for later</button></div> :
