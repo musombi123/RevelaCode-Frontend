@@ -41,9 +41,19 @@ function isBibleReference(value) {
 function atlasMatch(query) {
   const value = String(query || "").trim().toLowerCase();
   if (!value) return null;
+  const reference = value.match(/^(?:(?:1|2|3)\\s*)?([a-z][a-z\\s]*?)\\s+(\\d{1,3})(?::|$)/i);
+  if (reference) {
+    const book = reference[1].replace(/\\s+/g, " ").trim();
+    const chapter = Number(reference[2]);
+    const byChapter = ATLAS_NODES.find(node => {
+      const nodeReference = String(node.reference || "").replace(/[–—]/g, "-").toLowerCase();
+      return nodeReference.startsWith(book + " " + chapter + ":");
+    });
+    if (byChapter) return byChapter;
+  }
   return ATLAS_NODES.find(node => {
     const searchable = [node.title, node.reference, node.category, node.summary, ...(node.textFocus || []), ...(node.questions || [])].join(" ").toLowerCase();
-    return searchable.includes(value) || value.split(/\s+/).every(token => searchable.includes(token));
+    return searchable.includes(value) || value.split(/\\s+/).every(token => searchable.includes(token));
   }) || null;
 }
 
