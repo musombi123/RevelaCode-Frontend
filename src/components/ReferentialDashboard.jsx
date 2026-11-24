@@ -258,10 +258,10 @@ export default function ReferentialDashboard({ user, onOpenAI, onNavigate, onBac
       setSaveError("Couldn't pass this chain to Faith Atlas. Try saving the chain first.");
       return;
     }
+    window.dispatchEvent(new CustomEvent("revelacode:open-faith-atlas"));
     onNavigate?.("faith");
   };
 
-  const chainContext = activeChain || chains[0] || null;
   const askForContext = chain => {
     if (!chain) {
       setAiMaterial({
