@@ -721,6 +721,7 @@ export default function FaithDashboard({
   ======================================================= */
 
   const [faithSection, setFaithSection] = useState(() => {
+    if (typeof window === "undefined") return "home";
     try { return localStorage.getItem("revelacode_referential_pending_atlas_chain") ? "atlas" : "home"; }
     catch { return "home"; }
   });
