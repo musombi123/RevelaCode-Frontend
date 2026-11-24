@@ -100,6 +100,7 @@ export default function StudyFeed({
       if (offline) {
         const cachedMaterials = Array.isArray(savedCopy?.materials) ? savedCopy.materials : [];
         setMaterials(cachedMaterials);
+        setError(cachedMaterials.length === 0);
         onStatusChange?.({
           state: cachedMaterials.length ? "offline-saved" : "offline-missing",
           lastUpdated: savedCopy?.savedAt || "",
