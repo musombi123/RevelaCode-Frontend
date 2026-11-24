@@ -50,7 +50,7 @@ const RELATIONS = ["Same theme", "Symbol", "Fulfilment", "Contrast", "Quote"];
 
 export function PassageRow({ passage, index, total, onOpen, onMove, onDragStart, onDragOver, onDrop }) {
   return <article draggable onDragStart={event => onDragStart?.(event, index)} onDragOver={event => onDragOver?.(event, index)} onDrop={event => onDrop?.(event, index)} className={card + " flex min-w-0 items-center gap-2 p-2.5"}>
-    <button type="button" draggable onDragStart={event => onDragStart?.(event, index)} aria-label={"Drag to reorder " + passage.reference} className="inline-flex min-h-11 min-w-8 shrink-0 items-center justify-center rounded-lg text-slate-400"><GripVertical size={18}/></button>
+    <button type="button" draggable onDragStart={event => onDragStart?.(event, index)} aria-label={"Drag to reorder " + passage.reference} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-slate-400"><GripVertical size={18}/></button>
     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">{index + 1}</span>
     <button type="button" onClick={() => onOpen?.(passage)} className="min-w-0 flex-1 py-1 text-left">
       <span className="block truncate text-sm font-black">{passage.reference || "Untitled passage"}</span>
@@ -58,7 +58,7 @@ export function PassageRow({ passage, index, total, onOpen, onMove, onDragStart,
       <span className="mt-0.5 block line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{passage.subtitle || "Add a note about how this passage connects."}</span>
     </button>
     <div className="flex shrink-0 flex-col gap-0.5">
-      <button type="button" onClick={() => onMove?.(index, -1)} disabled={index === 0} aria-label="Move passage up" className="inline-flex h-8 w-9 items-center justify-center rounded-lg text-slate-500 disabled:opacity-25"><ArrowUp size={15}/></button>
+      <button type="button" onClick={() => onMove?.(index, -1)} disabled={index === 0} aria-label="Move passage up" className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 disabled:opacity-25"><ArrowUp size={15}/></button>
       <button type="button" onClick={() => onMove?.(index, 1)} disabled={index >= total - 1} aria-label="Move passage down" className="inline-flex h-8 w-9 items-center justify-center rounded-lg text-slate-500 disabled:opacity-25"><ArrowDown size={15}/></button>
     </div>
   </article>;
@@ -118,7 +118,7 @@ export function ChainBuilder({
     </section>
     <div className="grid grid-cols-2 gap-2"><button type="button" onClick={onOpenAtlas} className={touch + " gap-1.5 border border-slate-200 text-xs font-bold dark:border-slate-700"}><BookOpen size={14}/> Atlas</button><button type="button" onClick={onAsk} className={touch + " gap-1.5 border border-indigo-200 bg-indigo-50 text-xs font-bold text-indigo-800 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-200"}><Sparkles size={14}/> Ask how these connect</button></div>
     <button type="button" onClick={onSave} disabled={saving || !passages.length} className={touch + " w-full gap-2 bg-emerald-600 px-4 text-sm font-black text-white disabled:opacity-50"}>{saving ? <RefreshCw size={16} className="animate-spin motion-reduce:animate-none"/> : savedToast ? <Check size={17}/> : <Save size={17}/>} {saving ? "Saving…" : savedToast ? "Saved" : "Save chain for offline"}</button>
-    {savedToast && <p role="status" className="text-center text-xs font-semibold text-emerald-700 dark:text-emerald-300">Saved · this chain and its passage text are available offline.</p>}
+    {savedToast && <div role="status" className="fixed bottom-20 left-3 right-3 z-[70] mx-auto max-w-md rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-xs font-bold text-emerald-800 shadow-lg dark:border-emerald-900/50 dark:bg-emerald-950/70 dark:text-emerald-200">Saved · this chain and its passage text are available offline.</div>}
   </div>;
 }
 
