@@ -393,7 +393,7 @@ export default function ReferentialDashboard({ user, onOpenAI, onNavigate, onBac
           filter={activeFilter}
           onFilterChange={setActiveFilter}
           onOpen={chain => { setActiveChain({ ...chain, passages: [...chain.passages] }); setSavedToast(true); }}
-          onStart={() => { setChainInput(""); window.scrollTo({ top: 0, behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth" }); }}
+          onStart={() => { setChainInput(""); const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches; window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }); window.requestAnimationFrame(() => document.getElementById("referential-chain-start-input")?.focus()); }}
         />
         <LibraryStatusCard state={currentLibraryState} onRetry={retryLibrary} retrying={libraryRetrying}/>
         <StudyFeed userId={userId} onOpen={handleOpenMaterial} onStatusChange={onLibraryStatusChange}/>
