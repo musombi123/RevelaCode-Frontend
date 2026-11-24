@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";\nimport { ConnectivityPill, AskBar } from "./SharedMobileComponents.jsx";\nexport { ConnectivityPill, AskBar };
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ConnectivityPill, AskBar } from "./SharedMobileComponents.jsx";
+export { ConnectivityPill, AskBar };
 import {
   ArrowRight, BookOpen, ChevronDown, Download, ExternalLink, RefreshCw,
   X
