@@ -13,6 +13,7 @@ export function AskBar({ online, onAsk, storageKey = "revelacode_bible_saved_que
   const [expanded, setExpanded] = useState(false);
   const [toast, setToast] = useState(false);
   const [savedConfirmation, setSavedConfirmation] = useState(false);
+  const [saveError, setSaveError] = useState("");
   useEffect(() => {
     if (!online) return;
     let saved = [];
@@ -30,7 +31,7 @@ export function AskBar({ online, onAsk, storageKey = "revelacode_bible_saved_que
       setToast(false);
       setSavedConfirmation(true);
       window.dispatchEvent(new CustomEvent("revelacode:bible-question-saved"));
-    } catch { setToast(true); setSavedConfirmation(false); }
+    } catch { setToast(false); setSavedConfirmation(false); setSaveError("Could not save on this device. Check available storage."); }
   };
   return <div className="space-y-2">
     {!online ? <div className={"flex items-center gap-2 rounded-2xl px-3 py-2 " + base}><Sparkles size={16} className="text-indigo-500"/><input value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Ask AI (needs internet)" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-500" aria-label="Ask AI question"/><button type="button" onClick={save} disabled={!question.trim()} className={touch+" shrink-0 bg-amber-500 px-3 text-xs font-bold text-amber-950 disabled:opacity-40"}>Save for later</button></div> :
@@ -38,7 +39,7 @@ export function AskBar({ online, onAsk, storageKey = "revelacode_bible_saved_que
       {expanded ? <textarea autoFocus value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(question.trim())onAsk(question.trim());setQuestion("");setExpanded(false);}}} rows={2} placeholder="Ask about Scripture…" className="max-h-28 min-h-16 w-full resize-y bg-transparent px-2 text-sm leading-5 outline-none placeholder:text-slate-500"/> : <input value={question} onFocus={()=>setExpanded(true)} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&question.trim()){onAsk(question.trim());setQuestion("");setExpanded(false);}}} placeholder="Ask RevelaAI about Scripture…" className="min-h-9 w-full bg-transparent px-2 text-sm outline-none placeholder:text-slate-500"/>}
       {expanded && <div className="flex justify-end gap-2 pt-1"><button type="button" onClick={()=>{setExpanded(false);setQuestion("");}} className={touch+" px-3 text-xs text-slate-500"}>Cancel</button><button type="button" disabled={!question.trim()} onClick={()=>{onAsk(question.trim());setQuestion("");setExpanded(false);}} className={touch+" inline-flex items-center gap-1 bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-40"}><Send size={14}/> Ask</button></div>}
     </div>}
-    {savedConfirmation && !online && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">Will send when you are back online <button type="button" onClick={()=>setSavedConfirmation(false)} className="ml-2 font-bold underline">Dismiss</button></div>}
+    {saveError && !online && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">{saveError}</div>}\n    {savedConfirmation && !online && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">Will send when you are back online <button type="button" onClick={()=>setSavedConfirmation(false)} className="ml-2 font-bold underline">Dismiss</button></div>}
     {toast && online && <div role="status" className="flex items-center justify-between gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-200"><span>Send your saved question?</span><button type="button" onClick={()=>{try{const pending=JSON.parse(localStorage.getItem(storageKey)||"[]");const last=pending.pop();localStorage.setItem(storageKey,JSON.stringify(pending));if(last?.question)onAsk(last.question);}catch{}setToast(false);}} className="font-bold underline underline-offset-2">Send</button><button type="button" aria-label="Dismiss" onClick={()=>setToast(false)} className="p-1"><X size={14}/></button></div>}
   </div>;
 }
