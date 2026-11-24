@@ -88,7 +88,7 @@ function FaithAndroidWorkspaceFrame({ title, children, onBack, onNavigate, onOpe
   const { resolvedTheme } = useTheme();
   if (!nativeAndroid) return children;
   return (
-    <div className={"faith-android-shell min-h-[100svh] " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900")}>
+    <div className={"faith-android-shell min-h-0 w-full min-w-0 " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900")}>
       <header className={"sticky top-0 z-40 border-b px-3 py-3 backdrop-blur-xl " + (resolvedTheme === "dark" ? "border-white/10 bg-[#041726]/95 text-white" : "border-slate-200 bg-white/95 text-slate-900")}>
         <div className="mx-auto flex max-w-[760px] items-center gap-2.5">
           <button type="button" onClick={onBack} aria-label="Back to Faith" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1D4057] bg-[#0A2237] text-white active:scale-95">
@@ -103,7 +103,7 @@ function FaithAndroidWorkspaceFrame({ title, children, onBack, onNavigate, onOpe
           <button type="button" onClick={() => onOpenAI?.()} aria-label="Ask RevelaAI" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300 active:scale-95"><Sparkles size={18} /></button>
         </div>
       </header>
-      <main className="mx-auto w-full min-w-0 max-w-[760px] px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-3">
+      <main className="mx-auto w-full min-w-0 max-w-[760px] px-3 pb-3 pt-3">
         {children}
       </main>
       <FaithMobileBottomNav

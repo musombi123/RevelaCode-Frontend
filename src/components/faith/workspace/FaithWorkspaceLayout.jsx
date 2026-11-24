@@ -712,7 +712,7 @@ export default function FaithWorkspaceLayout({
   const closeOverlay = () => setOverlay("");
 
   return (
-    <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-clip pb-24 sm:space-y-5 sm:px-1 sm:pb-6 " + (nativeAndroid ? "faith-android-shell min-h-0 px-3 " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900") : "")}>
+    <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-clip " + (nativeAndroid ? "faith-android-shell min-h-0 px-3 pb-2 " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900") : "pb-24 sm:pb-6") + " sm:space-y-5 sm:px-1"}>
       {showOfflineBanner && <FaithOfflineBanner offline={offline} />}
       {showHeader && <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} onHome={goHome} />}
       {showAskBar && <InlineAskBar contextType={page} contextData={safeContextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />}
