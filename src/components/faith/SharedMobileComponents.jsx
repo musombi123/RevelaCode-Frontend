@@ -6,6 +6,8 @@ const touch = "min-h-11 min-w-11 touch-manipulation rounded-xl focus-visible:out
 
 export function ConnectivityPill({
   state = "online",
+  quarter,
+  year,
   offlineText,
   poorText = "Slow connection",
   onClick,
