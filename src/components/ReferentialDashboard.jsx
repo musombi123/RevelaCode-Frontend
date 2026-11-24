@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { App } from "@capacitor/app";
 import {
-  ArrowLeft, Copy, Filter, X
+  ArrowLeft, Copy, Filter, Save, X
 } from "lucide-react";
 import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
 import StudyReader from "./study/StudyReader.jsx";
