@@ -277,7 +277,31 @@ export default function BibleDashboard({
   const askAboutVerse = () => { const question = selectedVerse && selectedBook ? "Explain " + selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse + " in its context." : "Help me understand this Bible chapter in context."; const contextData = { reference: selectedVerse && selectedBook ? selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse : currentReference, version: bibleVersion.toUpperCase(), verseText: selectedVerse?.text || "" }; window.__revelacodeBibleQuestion = { question, contextType: "bible", contextData }; setAiSheet(true); };
   const bookEntries = bookKeys.map(key => ({ key, name: displayedBibleData[key]?.book || key }));
   const resumeReading = () => { if (cachedBibleChapter?.book && Number.isInteger(cachedBibleChapter.chapterIndex)) { setSelectedBookKey(cachedBibleChapter.book); setSelectedChapterIndex(cachedBibleChapter.chapterIndex); setVerses(cachedBibleChapter.verses || bibleData[cachedBibleChapter.book]?.chapters?.[cachedBibleChapter.chapterIndex]?.verses || []); setViewLevel("verses"); setHighlightedVerseRange(null); return; } const john = bookKeys.find(k => normalizeBookName(displayedBibleData[k]?.book) === "john"); if (john) { handleBookClick(john).then(() => handleChapterClick(0)); } };
-  const actOnVerse = async (action) => { if (!selectedVerse || !selectedBook) return; const ref = selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse; if (action === "Highlight") { const index = verses.findIndex(item => item.verse === selectedVerse.verse); if (index >= 0) setHighlightedVerseRange({start:index,end:index}); } if (action === "Share") { const text = ref + " — " + selectedVerse.text; try { if (navigator.share) await navigator.share({title:ref,text}); else await navigator.clipboard?.writeText(text); } catch {} return; } const storeKey = "revelacode_bible_" + action.toLowerCase() + "_v1"; try { const records = JSON.parse(localStorage.getItem(storeKey) || "[]"); localStorage.setItem(storeKey, JSON.stringify([...records, {reference:ref,text:selectedVerse.text,savedAt:new Date().toISOString()}])); setVerseActionsMessage(action + " saved · " + ref); } catch { setVerseActionsMessage("Could not save on this device."); } };
+  const actOnVerse = async (action) => {
+    if (!selectedVerse || !selectedBook) return;
+    const ref = selectedBook.book + " " + (selectedChapterIndex + 1) + ":" + selectedVerse.verse;
+    if (action === "Highlight") {
+      const index = verses.findIndex(item => item.verse === selectedVerse.verse);
+      if (index >= 0) setHighlightedVerseRange({ start: index, end: index });
+    }
+    if (action === "Note") {
+      setStudyTab("Notes");
+      setChapterNote(current => current + (current.trim() ? "\n\n" : "") + ref + " — " + selectedVerse.text + "\n");
+      setVerseActionsMessage("Verse added to your chapter notes.");
+      return;
+    }
+    if (action === "Share") {
+      const shareText = ref + " — " + selectedVerse.text;
+      try { if (navigator.share) await navigator.share({ title: ref, text: shareText }); else await navigator.clipboard?.writeText(shareText); } catch {}
+      return;
+    }
+    const storeKey = "revelacode_bible_bookmark_v1";
+    try {
+      const records = JSON.parse(localStorage.getItem(storeKey) || "[]");
+      localStorage.setItem(storeKey, JSON.stringify([...records, { reference: ref, text: selectedVerse.text, savedAt: new Date().toISOString() }]));
+      setVerseActionsMessage("Bookmark saved · " + ref);
+    } catch { setVerseActionsMessage("Could not save on this device."); }
+  }
 
   const verseRefs = useRef({});
   const chapterSwipeStartX = useRef(null);
