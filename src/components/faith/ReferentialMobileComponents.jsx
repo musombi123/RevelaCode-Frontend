@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check,
+  ArrowDown, ArrowRight, ArrowUp, BookOpen, Check,
   ChevronRight, Download, GripVertical, Library, Plus, RefreshCw,
   Save, Sparkles, X
 } from "lucide-react";
@@ -25,7 +25,7 @@ export function StartChainCard({ value, onChange, onStart, quickThemes = ["Sanct
   </section>;
 }
 
-export function ChainList({ chains = [], filter = "all", onFilterChange, onOpen, onStart }) {
+export function ChainList({ chains = [], filter = "all", onOpen, onStart }) {
   const visible = chains.filter(chain => filter !== "offline" || chain.savedOffline);
   return <section className="space-y-3">
     <div className="flex min-w-0 items-center justify-between gap-2 px-1">
