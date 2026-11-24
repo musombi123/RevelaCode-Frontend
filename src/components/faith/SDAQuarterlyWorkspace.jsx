@@ -227,6 +227,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
 
   const openReader = (material, day = selectedDay, focus = "") => {
     if (!material) return;
+    setSelectedDay(day);
     setReaderLesson(material);
     setReaderDay(day);
     setReaderFocus(focus);
