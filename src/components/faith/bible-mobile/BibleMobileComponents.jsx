@@ -28,6 +28,7 @@ export function AskBar({ online, onAsk, storageKey = "revelacode_bible_saved_que
       setQuestion("");
       setExpanded(false);
       setToast(false);
+      setSavedConfirmation(true);
       window.dispatchEvent(new CustomEvent("revelacode:bible-question-saved"));
     } catch { setToast(true); setSavedConfirmation(false); }
   };
