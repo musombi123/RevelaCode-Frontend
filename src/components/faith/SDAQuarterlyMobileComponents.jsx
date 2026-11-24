@@ -202,12 +202,12 @@ export function LessonReader({ material, day, onClose, onMarkDone, onNextDay, on
   </div>;
 }
 
-export function EmptyQuarter({ year, quarter, loading, lastUpdated, onDownload }) {
+export function EmptyQuarter({ year, quarter, loading, lessonCount = 0, lastUpdated, onDownload }) {
   return <section className={card + " space-y-3 border-dashed p-5 text-center"}>
     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-300"><Download size={22}/></div>
     <h3 className="text-base font-black">Download this quarter to read offline</h3>
     <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Save Q{quarter} {year} lessons on this device when they are available from the Study service.</p>
-    <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-label="Quarter download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loading ? undefined : lastUpdated ? 100 : 0} aria-valuetext={loading ? "Downloading quarter" : lastUpdated ? "Quarter saved" : "Not downloaded"}><div className={"h-full rounded-full bg-amber-500 " + (loading ? "w-1/3 animate-pulse motion-reduce:animate-none" : lastUpdated ? "w-full" : "w-0")}/></div>
+    <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-label="Quarter download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loading ? undefined : lessonCount > 0 ? 100 : 0} aria-valuetext={loading ? "Downloading quarter" : lessonCount > 0 ? "Quarter saved" : "No lessons saved"}><div className={"h-full rounded-full bg-amber-500 " + (loading ? "w-1/3 animate-pulse motion-reduce:animate-none" : lessonCount > 0 ? "w-full" : "w-0")}/></div>
     <button type="button" onClick={onDownload} disabled={loading} className={touch + " inline-flex w-full items-center justify-center gap-2 bg-amber-500 px-4 text-sm font-black text-amber-950 disabled:opacity-50"}>{loading ? <RefreshCw size={16} className="animate-spin motion-reduce:animate-none"/> : <Download size={16}/>} {loading ? "Downloading…" : "Download quarter"}</button>
     <p className="text-xs text-slate-500 dark:text-slate-400">Last updated: {lastUpdated || "Not downloaded on this device yet"}</p>
   </section>;
