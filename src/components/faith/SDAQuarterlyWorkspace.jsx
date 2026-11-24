@@ -104,14 +104,20 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
       const state = event?.detail?.state;
       if (["online", "poor", "offline"].includes(state)) setConnectionState(state);
     };
+    const onPoor = () => setConnectionState("poor");
+    const onRestored = () => setConnectionState(readConnectionState());
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
     window.addEventListener("revelacode:connection-state", onState);
+    window.addEventListener("revelacode:connection-poor", onPoor);
+    window.addEventListener("revelacode:connection-restored", onRestored);
     navigator.connection?.addEventListener?.("change", update);
     return () => {
       window.removeEventListener("online", update);
       window.removeEventListener("offline", update);
       window.removeEventListener("revelacode:connection-state", onState);
+      window.removeEventListener("revelacode:connection-poor", onPoor);
+      window.removeEventListener("revelacode:connection-restored", onRestored);
       navigator.connection?.removeEventListener?.("change", update);
     };
   }, []);
@@ -169,11 +175,11 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBac
       if (Array.isArray(cached?.materials)) {
         setMaterials(cached.materials);
         setLastUpdated(cached.savedAt || cached.updated_at || "");
-        setError(cached.materials.length ? "" : "No lessons are stored for this quarter yet.");
+        setError("");
       } else {
         setMaterials([]);
         setLastUpdated("");
-        setError(loadError?.message || "Couldn't load this quarter. Check your connection and retry.");
+        setError(typeof navigator !== "undefined" && navigator.onLine === false ? "No offline copy is saved yet. Connect to download this quarter." : "Couldn’t load this quarter. Check your connection and retry.");
       }
     } finally {
       setLoading(false);
