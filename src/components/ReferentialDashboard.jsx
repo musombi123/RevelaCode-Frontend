@@ -41,7 +41,7 @@ function isBibleReference(value) {
 function atlasMatch(query) {
   const value = String(query || "").trim().toLowerCase();
   if (!value) return null;
-  const reference = value.match(/^(?:(?:1|2|3)\s*)?([a-z][a-z\s]*?)\s+(\\d{1,3})(?::|$)/i);
+  const reference = value.match(/^(?:(?:1|2|3)\s*)?([a-z][a-z\s]*?)\s+(\d{1,3})(?::|$)/i);
   if (reference) {
     const book = reference[1].replace(/\s+/g, " ").trim();
     const chapter = Number(reference[2]);
