@@ -826,6 +826,8 @@ export default function BibleDashboard({
     setSelectedChapterIndex(
       index
     );
+    try { setChapterNote(localStorage.getItem("revelacode_bible_note_" + selectedBookKey + "_" + index) || ""); } catch { setChapterNote(""); }
+    setSelectedVerse(null);
 
     setVerses(
       chapter.verses || []
