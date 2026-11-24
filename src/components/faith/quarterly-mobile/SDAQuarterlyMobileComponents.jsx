@@ -84,7 +84,7 @@ export function AskBar({ online = true, onAsk }) {
 }
 
 export function DayChips({ days, selected, currentDay, completed = {}, onSelect }) {
-  return <div className="grid grid-cols-7 gap-1.5">
+  return <div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-1.5 px-1">
     {days.map((day, index) => {
       const done = Boolean(completed[day]);
       const isToday = day === currentDay;
@@ -94,7 +94,7 @@ export function DayChips({ days, selected, currentDay, completed = {}, onSelect 
         <span>{day.slice(0, 3)}</span><span className="text-[0.55rem] leading-none">{done ? "✓" : index + 1}</span>
       </button>;
     })}
-  </div>;
+  </div></div>;
 }
 
 export function WeekCard({ loading, lesson, day, dayNumber, todayDay, completed, streak, onSelectDay, onRead, onMemoryVerse, onNotes }) {
@@ -192,7 +192,7 @@ export function LessonReader({ material, day, onClose, onMarkDone, onNextDay, on
       <div className="space-y-4 px-4 py-4">
         <section ref={memoryRef} className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/25"><p className="text-[0.65rem] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">Memory verse</p><p className="mt-2 font-serif text-base leading-7 text-amber-950 dark:text-amber-100">{memoryText}</p>{(meta.memory_reference || meta.memory_ref || material?.memory_reference) && <p className="mt-2 text-xs font-bold text-amber-800 dark:text-amber-200">{meta.memory_reference || meta.memory_ref || material.memory_reference}</p>}</section>
         <section><h3 className="mb-2 text-sm font-black">Reading</h3><div className="whitespace-pre-wrap break-words font-serif leading-8 text-slate-800 dark:text-slate-100" style={{fontSize: textRem + "rem"}}>{body ? renderReading(body, onOpenReference) : "The reading text for this day has not been added yet."}</div></section>
-        {<section className={card + " p-3"}><h3 className="mb-2 text-sm font-black">Discussion questions</h3>{questions.length ? <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">{questions.map((item,index)=><li key={index}>{item}</li>)}</ol> : <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">No discussion questions were supplied for this reading.</p>}</section>}
+        <section className={card + " p-3"}><h3 className="mb-2 text-sm font-black">Discussion questions</h3>{questions.length ? <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">{questions.map((item,index)=><li key={index}>{item}</li>)}</ol> : <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">No discussion questions were supplied for this reading.</p>}</section>}
         <section ref={notesRef} className={card + " p-3"}><div className="mb-2 flex items-center justify-between gap-2"><label htmlFor="sda-lesson-notes" className="text-sm font-black">My notes</label><span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">{notesSaved ? "Saved" : "Saving on this device"}</span></div><textarea id="sda-lesson-notes" value={notes} onChange={event => saveNotes(event.target.value)} rows={5} placeholder="Write observations, questions and applications…" className="min-h-28 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-3 text-base leading-6 text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"/></section>
         <button type="button" onClick={onAsk} className="mx-auto flex min-h-11 items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 text-xs font-bold text-indigo-800 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-200"><Sparkles size={15}/> Ask about this lesson</button>
         <div className="grid grid-cols-2 gap-2"><button type="button" onClick={onMarkDone} className={touch + " bg-emerald-600 px-3 text-xs font-black text-white"}>{completed ? "Completed ✓" : "Mark day done"}</button><button type="button" onClick={onNextDay} className={touch + " border border-slate-200 px-3 text-xs font-bold dark:border-slate-700"}>Next day <ArrowRight size={14} className="ml-1 inline"/></button></div>
