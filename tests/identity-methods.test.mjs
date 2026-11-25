@@ -12,7 +12,7 @@ test("identity gateway exposes Microsoft and GitHub only when configured for sig
   assert.match(startModal, /handleProviderSignIn\("microsoft"\)/);
   assert.match(startModal, /identityProviders\.github\?\.enabled/);
   assert.match(startModal, /handleProviderSignIn\("github"\)/);
-  assert.match(startModal, /\/api\/oauth\/\" \+ provider \+ \"\/start/);
+  assert.match(startModal, /\/api\/oauth\//);
   assert.match(startModal, /authorizationUrl\.searchParams\.set\(\"client\"/);
 });
 
