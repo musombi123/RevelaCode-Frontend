@@ -108,9 +108,36 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   }, [onConnectionChange]);
 
   useEffect(() => {
-    // One health probe on mount. No background polling or automatic /pair retries.
+    // Probe immediately, then use a bounded low-frequency discovery window.
+    // This lets the browser detect the agent as soon as the installer starts it,
+    // without repeatedly calling /pair or retrying failed production requests.
     void checkAgent();
   }, [checkAgent]);
+
+  useEffect(() => {
+    if (agentReachable) return undefined;
+    let attempts = 0;
+    let timer = null;
+    let cancelled = false;
+
+    const retryHealthCheck = () => {
+      timer = window.setTimeout(async () => {
+        if (cancelled || document.visibilityState === "hidden") {
+          if (!cancelled && attempts < 18) retryHealthCheck();
+          return;
+        }
+        attempts += 1;
+        const reachable = await checkAgent();
+        if (!cancelled && !reachable && attempts < 18) retryHealthCheck();
+      }, 5000);
+    };
+
+    retryHealthCheck();
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
+    };
+  }, [agentReachable, checkAgent]);
 
   const pair = async () => {
     if (!agentReachable) {
@@ -254,25 +281,13 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
         <div className="min-w-0">
           <h4 className="text-xs font-black">THE LOCAL AGENT IS NOT RUNNING</h4>
-          <p className="mt-1 text-[11px] leading-5">This is a connection to your own PC, not a cloud server. Connection refused means nothing is listening on port 8765 on the computer running this browser. Start the NEXORA Local Agent before pairing.</p>
-          <ol className="mt-2 list-decimal space-y-1 pl-4 text-[11px] leading-5">
-            <li>Download and run the Windows installer below on the PC you want NEXORA to use.</li>
-            <li>Keep the PowerShell window open while producing games.</li>
-            <li>Return here and select <b>Check connection</b>, then <b>Allow & connect this computer</b>.</li>
-          </ol>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <a href="https://raw.githubusercontent.com/musombi123/Procedural-Game-Foundry/main/scripts/install-nexora-local-agent.ps1" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-violet-700 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> Download Windows installer</a>
-            <button type="button" className={button} onClick={async () => {
-              const command = "$script = Join-Path $env:TEMP 'install-nexora-local-agent.ps1'; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/musombi123/Procedural-Game-Foundry/main/scripts/install-nexora-local-agent.ps1' -OutFile $script; Set-ExecutionPolicy -Scope Process Bypass -Force; & $script";
-              try {
-                await navigator.clipboard.writeText(command);
-                setStatus("Installer command copied. Paste it into PowerShell on the PC you want to connect.");
-              } catch {
-                setStatus("Open the installer link above, save the .ps1 file, then run it from PowerShell.");
-              }
-            }}>Copy PowerShell install command</button>
+          <p className="mt-1 text-[11px] leading-5">NEXORA needs its small Local Agent companion running on this PC for local builds and hardware access. It is not a cloud connection.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <a href="https://github.com/musombi123/Procedural-Game-Foundry/releases/latest/download/NEXORA-Local-Agent-Setup.exe" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-violet-700 px-4 py-2 text-[11px] font-bold text-white"><Download size={14}/> Download Windows Installer</a>
+            <button type="button" className={button} disabled={agentChecking} onClick={checkAgent}><RefreshCw size={13}/>{agentChecking ? "Checking…" : "Check again"}</button>
           </div>
-          <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Run this on the target Windows PC as your normal user. Python 3.11+ is required. The installer does not grant remote access; the NEXORA account must still approve pairing in this browser.</p>
+          <p className="mt-2 text-[10px] leading-5 text-slate-500 dark:text-slate-400">Install once. NEXORA installs the background companion for your Windows account, starts it immediately and starts it automatically when you sign in again. This page checks for it automatically after installation. No Git, Python, terminal or pasted commands are required.</p>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">After the companion is detected, approve this NEXORA account once. Production access remains limited to this computer and the account you authorize.</p>
         </div>
       </div>
     </div>}
