@@ -331,3 +331,13 @@ test("Device Lab distinguishes no safe execution target from a server size-only 
   assert.match(bridge, /resource, tool and storage checks/);
   assert.doesNotMatch(bridge, /The standard server worker is not large enough for this workload/);
 });
+
+
+test("Device Lab displays live CPU headroom and utilization beside total cores", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /machine\.cpu_available_cores/);
+  assert.match(bridge, /machine\.cpu_utilization_percent/);
+  assert.match(bridge, /cores currently available/);
+  assert.match(bridge, /system use/);
+  assert.match(bridge, /machine\.ram_available_gib/);
+});
