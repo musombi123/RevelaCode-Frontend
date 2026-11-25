@@ -254,25 +254,16 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
         <div className="min-w-0">
           <h4 className="text-xs font-black">THE LOCAL AGENT IS NOT RUNNING</h4>
-          <p className="mt-1 text-[11px] leading-5">This is a connection to your own PC, not a cloud server. Connection refused means nothing is listening on port 8765 on the computer running this browser. Start the NEXORA Local Agent before pairing.</p>
+          <p className="mt-1 text-[11px] leading-5">NEXORA runs production on your own PC. This connection is unavailable because the local companion is not installed or is not running. Install it once; NEXORA will detect it automatically on future visits.</p>
           <ol className="mt-2 list-decimal space-y-1 pl-4 text-[11px] leading-5">
-            <li>Download and run the Windows installer below on the PC you want NEXORA to use.</li>
-            <li>Keep the PowerShell window open while producing games.</li>
-            <li>Return here and select <b>Check connection</b>, then <b>Allow & connect this computer</b>.</li>
+            <li>Download and open the NEXORA Local Agent installer on the PC you want to use.</li>
+            <li>Complete the normal Windows setup. It includes its own runtime, starts the companion in the background and can start it automatically when you sign in.</li>
+            <li>Return here and select <b>Check connection</b>, then approve this account with <b>Allow & connect this computer</b>.</li>
           </ol>
           <div className="mt-3 flex flex-wrap gap-2">
-            <a href="https://raw.githubusercontent.com/musombi123/Procedural-Game-Foundry/main/scripts/install-nexora-local-agent.ps1" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-violet-700 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> Download Windows installer</a>
-            <button type="button" className={button} onClick={async () => {
-              const command = "$script = Join-Path $env:TEMP 'install-nexora-local-agent.ps1'; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/musombi123/Procedural-Game-Foundry/main/scripts/install-nexora-local-agent.ps1' -OutFile $script; Set-ExecutionPolicy -Scope Process Bypass -Force; & $script";
-              try {
-                await navigator.clipboard.writeText(command);
-                setStatus("Installer command copied. Paste it into PowerShell on the PC you want to connect.");
-              } catch {
-                setStatus("Open the installer link above, save the .ps1 file, then run it from PowerShell.");
-              }
-            }}>Copy PowerShell install command</button>
+            <a href="https://github.com/musombi123/Procedural-Game-Foundry/releases/latest/download/NEXORA-Local-Agent-Setup.exe" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-violet-700 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> Download NEXORA for Windows</a>
           </div>
-          <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Run this on the target Windows PC as your normal user. Python 3.11+ is required. The installer does not grant remote access; the NEXORA account must still approve pairing in this browser.</p>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">No Git, Python installation, terminal commands or manual code entry are required. The installer runs under your Windows user account. The website still requires your explicit approval before pairing.</p>
         </div>
       </div>
     </div>}
