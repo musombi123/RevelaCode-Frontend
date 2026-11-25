@@ -216,7 +216,7 @@ test("Local Agent pairing is code-free and requires a signed-in user's explicit 
 
 
 
-test("Asset Library displays the managed server toolchain installed by NEXORA", async () => {
+test("Asset Library displays the server-installed toolchain and persistent workspace readiness", async () => {
   const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
   const panel = await readComponent("NexoraManagedComputeStatus.jsx");
   assert.match(workspace, /NexoraManagedComputeStatus accountAccessToken/);
@@ -224,13 +224,28 @@ test("Asset Library displays the managed server toolchain installed by NEXORA", 
     assert.ok(panel.includes('"'+tool+'"'));
   }
   assert.ok(panel.includes("/api/compute/capabilities"));
-  assert.ok(panel.includes("remote job execution is activated separately"));
+  assert.ok(panel.includes("Persistent workspace volume is mounted and writable."));
+  assert.ok(panel.includes("secure project transfer and remote job execution are still disabled"));
 });
 
-test("Device Lab requires explicit consent before sending local resource metrics", async () => {
+test("Signed-in users get a server-only toolchain check before pairing the local device", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.ok(bridge.includes("requestManagedPlan(null, workloadProfile, false)"));
+  assert.ok(bridge.includes("The default placement check sends no local device information"));
+  assert.ok(bridge.includes("SERVER-MANAGED PRODUCTION TOOLCHAIN"));
+  assert.ok(bridge.includes("Local device metrics: not shared. Local capacity is treated as unknown."));
+  assert.ok(bridge.includes("LOCAL DEVICE BRIDGE NOT CONNECTED · OPTIONAL"));
+  assert.ok(bridge.includes('navigator.permissions.query({ name: "loopback-network" })'));
+  assert.ok(bridge.includes("installerRelease.url"));
+  assert.ok(bridge.includes("job execution are not enabled yet"));
+});
+
+
+test("Device Lab sends local resource metrics only after explicit consent", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.match(bridge, /shareHardwareMetrics, setShareHardwareMetrics/);
-  assert.match(bridge, /consent_to_share_hardware_metrics: true/);
+  assert.match(bridge, /consent_to_share_hardware_metrics: metricsShared/);
+  assert.match(bridge, /local_profile: metricsShared \? systemProfile : \{\}/);
   assert.match(bridge, /setHardwareMetricsConsent/);
   assert.match(bridge, /No file paths, device IDs, project files or source media are included/);
   assert.match(bridge, /job execution are not enabled yet/);
