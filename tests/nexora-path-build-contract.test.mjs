@@ -57,7 +57,7 @@ test("NEXORA Studio Pro exposes all redesigned workspace destinations", () => {
     assert.ok(workspace.includes('studioView === "'+route+'"') || workspace.includes('studioView !== "'+route+'"'), "Workspace does not route "+route);
   }
   assert.match(workspace, /<NexoraStudioShell/);
-  assert.match(workspace, /<NexoraOverviewPage/);
+  assert.match(workspace, /<NexoraStudioOverview/);
   assert.match(workspace, /<NexoraProjectsPage/);
   assert.match(workspace, /<NexoraTasksPage/);
   assert.match(workspace, /<NexoraAnalyticsPage/);
@@ -81,9 +81,9 @@ test("local team task board and unsupported marketplace integrations are labelle
   const pages = read("apps/nexora/src/components/nexora/NexoraWorkspacePages.jsx");
   assert.match(pages, /Tasks linked to cloud projects sync/);
   assert.match(pages, /Team-member permissions, cross-member assignments and comments require a collaborative team service/);
-  assert.match(pages, /Paid third-party marketplace checkout is not connected/);
+  assert.match(pages, /paid third-party marketplace checkout is not connected/i);
   const shell = read("apps/nexora/src/components/nexora/NexoraStudioShell.jsx");
-  assert.match(shell, /Account quota is not exposed by this service/);
+  assert.match(shell, /Account identity and billing use the NEXORA control plane/);
 });
 
 test("World Builder uses owner-scoped NEXORA endpoints and canonical save documents", () => {
@@ -92,8 +92,8 @@ test("World Builder uses owner-scoped NEXORA endpoints and canonical save docume
   assert.doesNotMatch(world, /["']\/api\/projects\//);
   assert.match(world, /payload\.document/);
   assert.match(world, /cloudProjectActive/);
-  assert.match(world, /localStorage\.getItem\(localWorldKey\)/);
-  assert.match(world, /localStorage\.setItem\(localWorldKey/);
+  assert.match(world, /readWorldSnapshot\(localStorage,\s*localWorldKey\)/);
+  assert.match(world, /writeWorldSnapshot\(localStorage,\s*localWorldKey,\s*pendingWorldKey/);
   const workspace = read("apps/nexora/src/components/nexora/NexoraFoundryWorkspace.jsx");
   assert.match(workspace, /userId=\{nexoraUser\?\.id \|\| "anonymous"\}/);
 });
@@ -134,5 +134,5 @@ test("workspace shell and dialogs share a valid React fragment root", () => {
 
 test("NEXORA workspace closes its fragment and component", () => {
   const workspace = read("apps/nexora/src/components/nexora/NexoraFoundryWorkspace.jsx");
-  assert.match(workspace, /<\\/NexoraStudioShell>[\\s\\S]*<\\/>\\s*\\);\\s*}\\s*$/);
+  assert.match(workspace, /<\/NexoraStudioShell>[\s\S]*<\/>\s*\);\s*}\s*$/);
 });

@@ -757,9 +757,13 @@ export default function NexoraFoundryWorkspace() {
       const serialized = JSON.stringify(workspaceProjectDocument(project));
       const baseline = cloudBaseline.current.get(project.id);
       const previous = readProjectRecovery(localStorage, storageUserId, project.id);
-      const pending = baseline !== undefined
-        ? baseline !== serialized
-        : Boolean(project._pendingLocalRecovery || previous?.pending);
+      // A pending marker must survive an offline reload even when the
+      // recovered document becomes the new in-memory baseline on startup.
+      const pending = Boolean(previous?.pending) || (
+        baseline !== undefined
+          ? baseline !== serialized
+          : Boolean(project._pendingLocalRecovery)
+      );
       const recoveryBaseVersion = project._recoveryConflict && previous?.remote_version
         ? previous.remote_version
         : project._remoteVersion;
@@ -1799,10 +1803,30 @@ export default function NexoraFoundryWorkspace() {
     }
     if (choice === "reload") {
       if (!window.confirm("Discard this browser recovery copy and reload the current project from the paired computer?")) return;
-      removeProjectRecovery(localStorage, storageUserId, project.id);
-      cloudBaseline.current.delete(project.id);
-      await refreshWorkspace();
-      setNotice("The latest project version was reloaded from the paired computer.");
+      try {
+        // Fetch the authoritative version first. Keep the recovery snapshot if
+        // the Local Agent is unavailable or the project cannot be found.
+        const response = await apiRequest("/api/v1/workspace/projects");
+        const row = (response.projects || []).find((item) => String(item.id) === String(project.id));
+        if (!row) throw new Error("The paired computer did not return this project. The browser recovery copy has been kept.");
+        const assetResponse = await apiRequest(`/api/v1/workspace/projects/${project.id}/assets`);
+        const assets = (assetResponse.assets || []).map(cloudAssetFromApi);
+        const latest = workspaceProjectFromCloud(row, assets);
+        cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(latest)));
+        const savedRecovery = writeProjectRecovery(localStorage, storageUserId, latest, {
+          pending: false,
+          remoteVersion: latest._remoteVersion,
+        });
+        if (!savedRecovery) throw new Error("The current project loaded, but its recovery record could not be updated. The previous browser recovery copy remains available.");
+        setProjects((current) => current.map((item) => item.id === project.id ? latest : item));
+        setActiveId(project.id);
+        setSelectedObjectId(latest.scene?.objects?.[0]?.id || "");
+        setApiStatus({ state: "online", label: "Paired-computer project reloaded" });
+        setNotice("The latest project version was reloaded from the paired computer. The previous browser recovery copy is no longer pending.");
+      } catch (error) {
+        setApiStatus({ state: "offline", label: "Project reload failed · recovery copy preserved" });
+        setNotice(error.message || "Could not reload the paired-computer project. Your browser recovery copy has been kept.");
+      }
       return;
     }
     if (choice !== "apply") return;

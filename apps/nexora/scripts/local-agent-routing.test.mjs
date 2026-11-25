@@ -19,7 +19,9 @@ const readComponent = (name) => readFile(new URL(name, componentRoot), "utf8");
 
 class MemoryStorage {
   #values = new Map();
-  getItem(key) { return this.#values.has(key) ? this.#values.get(key) : null; }
+  get length() { return this.#values.size; }
+  key(index) { return Array.from(this.#values.keys())[index] ?? null; }
+  getItem(key) { return this.#values.has(String(key)) ? this.#values.get(String(key)) : null; }
   setItem(key, value) { this.#values.set(String(key), String(value)); }
   removeItem(key) { this.#values.delete(String(key)); }
 }
@@ -166,4 +168,29 @@ test("project API documents omit local recovery bookkeeping", async () => {
   assert.match(workspace, /project\._recoveryConflict && previous\?\.remote_version/);
   assert.match(workspace, /APPLY BROWSER RECOVERY COPY/);
   assert.ok(workspace.indexOf("resolveLocalEngineUrl(input, API_BASE, LOCAL_AGENT_BASE)") < workspace.indexOf('headers.set("Authorization", "Bearer " + token)'));
+});
+
+
+test("Pending device recovery survives an offline browser reload", async () => {
+  const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
+  assert.match(workspace, /const pending = Boolean\(previous\?\.pending\) \|\|/);
+  assert.match(workspace, /_offlineRecovery: true/);
+  assert.match(workspace, /if \(recovery\?\.pending && recovery\.project\)/);
+});
+
+test("Keep-device-version action only clears recovery after authoritative data loads", async () => {
+  const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
+  const handler = workspace.slice(
+    workspace.indexOf("const resolveProjectRecoveryConflict"),
+    workspace.indexOf("const quickAction", workspace.indexOf("const resolveProjectRecoveryConflict")),
+  );
+  const listProjects = handler.indexOf('apiRequest("/api/v1/workspace/projects")');
+  const findProject = handler.indexOf("if (!row)");
+  const fetchAssets = handler.indexOf('/assets`');
+  const writeRecovery = handler.indexOf("writeProjectRecovery(localStorage, storageUserId, latest");
+  assert.ok(listProjects >= 0);
+  assert.ok(findProject > listProjects);
+  assert.ok(fetchAssets > findProject);
+  assert.ok(writeRecovery > fetchAssets);
+  assert.match(handler, /catch \(error\)[\s\S]*browser recovery copy has been kept/);
 });
