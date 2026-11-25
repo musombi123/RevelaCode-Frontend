@@ -13,7 +13,7 @@ test("identity gateway exposes Microsoft and GitHub only when configured for sig
   assert.match(startModal, /identityProviders\.github\?\.enabled/);
   assert.match(startModal, /handleProviderSignIn\("github"\)/);
   assert.match(startModal, /\/api\/oauth\/\" \+ provider \+ \"\/start/);
-  assert.match(startModal, /provider, \"client\"/);
+  assert.match(startModal, /authorizationUrl\.searchParams\.set\(\"client\"/);
 });
 
 test("phone OTP login uses a separate challenge and six-digit verification step", () => {
