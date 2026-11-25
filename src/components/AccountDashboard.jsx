@@ -123,21 +123,37 @@ export default function AccountDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const connectProvider = (provider) => {
+  const connectProvider = async (provider) => {
     setError("");
     setNotice("");
-    const status = providerStatus[provider]?.enabled;
-    if (!status) {
+    if (!providerStatus[provider]?.enabled) {
       setError(provider + " sign-in has not been configured on the RevelaCode backend yet.");
       return;
     }
-    const url = new URL(
-      String(baseUrl).replace(/\/+$/, "") + "/api/oauth/" + provider + "/start",
-      window.location.origin,
-    );
-    url.searchParams.set("mode", "link");
-    url.searchParams.set("client", window.Capacitor?.isNativePlatform?.() ? "android" : "web");
-    window.location.assign(url.toString());
+    setBusy("provider-" + provider);
+    try {
+      const client = window.Capacitor?.isNativePlatform?.() ? "android" : "web";
+      const result = await apiRequest("/api/oauth/" + provider + "/link/start", {
+        method: "POST",
+        body: JSON.stringify({ client }),
+      });
+      const authorizationUrl = new URL(String(result.authorization_url || ""));
+      const allowedHosts = {
+        google: "accounts.google.com",
+        microsoft: "login.microsoftonline.com",
+        github: "github.com",
+      };
+      if (
+        authorizationUrl.protocol !== "https:" ||
+        authorizationUrl.hostname !== allowedHosts[provider]
+      ) {
+        throw new Error("The identity provider returned an unexpected authorization URL.");
+      }
+      window.location.assign(authorizationUrl.toString());
+    } catch (requestError) {
+      setError(requestError?.message || "Could not start provider linking.");
+      setBusy("");
+    }
   };
 
   const disconnectProvider = async (provider) => {
@@ -314,7 +330,7 @@ export default function AccountDashboard() {
                       </div>
                     </div>
                     {connected ? (
-                      <Button size="sm" variant="outline" disabled={Boolean(busy)} onClick={() => disconnectProvider(provider.id)}>
+                      <Button disabled={Boolean(busy)} onClick={() => disconnectProvider(provider.id)}>
                         {providerBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Unlink className="mr-1 h-4 w-4" />}
                         Disconnect
                       </Button>
