@@ -17,6 +17,9 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
 import MfaSettings from "./accounts/MfaSettings.jsx";
+import { registerPlugin } from "@capacitor/core";
+
+const NativeBrowser = registerPlugin("Browser");
 
 const baseUrl = resolveBackendBaseUrl(import.meta.env || {});
 
@@ -149,7 +152,14 @@ export default function AccountDashboard() {
       ) {
         throw new Error("The identity provider returned an unexpected authorization URL.");
       }
-      window.location.assign(authorizationUrl.toString());
+      if (client === "android") {
+        await NativeBrowser.open({
+          url: authorizationUrl.toString(),
+          toolbarColor: "#08111F",
+        });
+      } else {
+        window.location.assign(authorizationUrl.toString());
+      }
     } catch (requestError) {
       setError(requestError?.message || "Could not start provider linking.");
       setBusy("");
