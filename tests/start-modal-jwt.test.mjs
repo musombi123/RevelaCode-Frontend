@@ -157,6 +157,21 @@ test("first entry gives visitors an immediate guest-exploration choice", () => {
   assert.match(authContext, /isGuest:\s*true/);
 });
 
+test("Identity Gateway keeps the responsive two-panel shell and all three account modes", async () => {
+  const styles = await readFile(new URL("../src/components/StartModal.css", import.meta.url), "utf8");
+  assert.match(startModal, /className="rc-gateway-dialog"/);
+  assert.match(startModal, /className="rc-gateway-brand"/);
+  assert.match(startModal, /className="rc-gateway-auth-panel"/);
+  assert.match(startModal, /className="rc-gateway-tabs"/);
+  assert.match(startModal, /setMode\("login"\)/);
+  assert.match(startModal, /setMode\("register"\)/);
+  assert.match(startModal, /setMode\("forgot"\)/);
+  assert.match(startModal, /<DemoLauncher compact \/>/);
+  assert.match(styles, /grid-template-columns:\s*minmax\(0,\.9fr\)\s+minmax\(0,1.1fr\)/);
+  assert.match(styles, /@media\(max-width:800px\)/);
+  assert.match(styles, /prefers-reduced-motion:reduce/);
+});
+
 test("guest navigation excludes identity, settings, security, and payment areas", () => {
   assert.match(mainDashboard, /dashboard\.restricted/);
   assert.match(mainDashboard, /\["accounts", "profile", "settings", "payments"\]/);

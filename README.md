@@ -339,3 +339,7 @@ the NEXORA path so it cannot intercept NEXORA assets or sessions.
 ## Licence
 
 The frontend is released under the **MIT License**. See [LICENSE](LICENSE) for the full licence text. This is the frontend's explicit open-source licence; other RevelaCode repositories have their own licensing terms. Third-party dependencies and assets remain under their own licences.
+
+## Frontend research and technical due diligence
+
+The founder study library is available in [`docs/research/`](docs/research/README.md). It documents the React application architecture, product surfaces, authentication, offline behavior and client delivery boundaries.
