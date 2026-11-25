@@ -228,7 +228,7 @@ test("Build & Test is the single production entry and Connected Devices remains 
   assert.match(workspace, /CONNECTED DEVICES/);
   assert.match(shell, /label: "Connected Devices"/);
   assert.match(center, /<NexoraManagedComputeStatus/);
-  assert.match(center, /Remote project transfer and remote job submission are not enabled yet/);
+  assert.match(center, /remote project transfer and remote job submission are not enabled yet/i);
   assert.match(center, /Desktop Agent performs the current local build/);
 });
 
@@ -264,7 +264,7 @@ test("Local device metrics are not sent from the desktop bridge component", asyn
   assert.doesNotMatch(bridge, /consent_to_share_hardware_metrics|local_profile:/);
   assert.match(bridge, /Local measurements stay on this PC/);
   assert.match(bridge, /Managed server readiness is shown separately in Build & Test/);
-  assert.match(bridge, /Remote project execution is not enabled/);
+  assert.match(bridge, /remote project execution is not enabled/i);
 });
 
 test("Local Agent installation is user-friendly and discovery retries automatically after install", async () => {
