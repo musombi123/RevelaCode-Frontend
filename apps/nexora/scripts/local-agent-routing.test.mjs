@@ -229,7 +229,7 @@ test("Build & Test is the single production entry and Connected Devices remains 
   assert.match(shell, /label: "Connected Devices"/);
   assert.match(center, /<NexoraManagedComputeStatus/);
   assert.match(center, /Remote project transfer and remote job submission are not enabled yet/);
-  assert.match(center, /Local Agent performs the current local build/);
+  assert.match(center, /Desktop Agent performs the current local build/);
 });
 
 test("Managed compute readiness and workload placement live in one Build & Test card", async () => {
