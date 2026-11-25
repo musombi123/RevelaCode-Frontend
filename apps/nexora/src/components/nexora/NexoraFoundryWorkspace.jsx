@@ -400,7 +400,7 @@ export default function NexoraFoundryWorkspace() {
     const headers = new Headers(options.headers || {});
     headers.set("Authorization", "Bearer " + token);
     headers.set("Accept", headers.get("Accept") || "application/json");
-    return fetch(path, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store" });
+    return fetch(path, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store", targetAddressSpace: "loopback" });
   }, []);
 
   useEffect(() => {
@@ -415,7 +415,7 @@ export default function NexoraFoundryWorkspace() {
     setLocalAgentState("checking");
     fetch(LOCAL_AGENT_BASE + "/system/capabilities", {
       headers: { Authorization: "Bearer " + token, Accept: "application/json" },
-      mode: "cors", credentials: "omit", cache: "no-store",
+      mode: "cors", credentials: "omit", cache: "no-store", targetAddressSpace: "loopback",
     }).then((response) => {
       if (!response.ok) throw new Error("Local pairing is no longer valid.");
       return response.json();
@@ -440,7 +440,7 @@ export default function NexoraFoundryWorkspace() {
         await fetch(LOCAL_AGENT_BASE + "/disconnect", {
           method: "POST",
           headers: { Authorization: "Bearer " + localToken, Accept: "application/json" },
-          mode: "cors", credentials: "omit", cache: "no-store",
+          mode: "cors", credentials: "omit", cache: "no-store", targetAddressSpace: "loopback",
         });
       } catch {}
     }
