@@ -225,7 +225,7 @@ test("Asset Library displays the server-installed toolchain and persistent works
   }
   assert.ok(panel.includes("/api/compute/capabilities"));
   assert.ok(panel.includes("Persistent workspace volume is mounted and writable."));
-  assert.ok(panel.includes("secure project transfer and remote job execution are still disabled"));
+  assert.ok(panel.includes("Tool readiness is not job-execution readiness"));
 });
 
 test("Signed-in users get a server-only toolchain check before pairing the local device", async () => {
@@ -291,4 +291,53 @@ test("Device Lab only offers the Windows installer after a signed release asset 
   assert.ok(bridge.includes('installerRelease.state === "available" && <a href={installerRelease.url}'));
   assert.ok(bridge.includes("The signed Windows installer is not published yet."));
   assert.ok(bridge.includes("Check release"));
+});
+
+
+test("Managed Toolchain separates core workload tools from optional Android SDK readiness", async () => {
+  const panel = await readComponent("NexoraManagedComputeStatus.jsx");
+  assert.match(panel, /core_toolchain_ready \?\? status\?\.toolchain_ready/);
+  assert.match(panel, /workloadCapabilities\[key\]/);
+  assert.match(panel, /procedural_3d/);
+  assert.match(panel, /movie_processing/);
+  assert.match(panel, /android_export/);
+  assert.match(panel, /Android export is optional/);
+  assert.match(panel, /absence does not disable 3D or movie-processing tools/);
+  assert.match(panel, /Tool readiness is not job-execution readiness/);
+  assert.match(panel, /Secure project transfer, durable remote job submission and artifact retrieval remain disabled/);
+});
+
+test("Android SDK and ADB are displayed as optional capabilities, not core toolchain failures", async () => {
+  const panel = await readComponent("NexoraManagedComputeStatus.jsx");
+  assert.match(panel, /\["adb", "ADB", true\]/);
+  assert.match(panel, /\["android_sdk", "Android SDK", true\]/);
+  assert.match(panel, /\["blender", "Blender", false\]/);
+  assert.match(panel, /\["godot", "Godot 4", false\]/);
+});
+
+
+test("Device Lab presents Android SDK as optional and exposes per-workload server tools", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /\["android_sdk", "Android SDK", true\]/);
+  assert.match(bridge, /\["adb", "ADB", true\]/);
+  assert.match(bridge, /core_toolchain_ready \?\? managedCapabilities\.toolchain_ready/);
+  assert.match(bridge, /managedCapabilities\.workload_capabilities/);
+  assert.match(bridge, /Android SDK\/ADB are optional and do not disable 3D or movie-processing capabilities/);
+  assert.match(bridge, /No project data was transferred and no job was started/);
+});
+
+test("Device Lab distinguishes no safe execution target from a server size-only failure", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /resource, tool and storage checks/);
+  assert.doesNotMatch(bridge, /The standard server worker is not large enough for this workload/);
+});
+
+
+test("Device Lab displays live CPU headroom and utilization beside total cores", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /machine\.cpu_available_cores/);
+  assert.match(bridge, /machine\.cpu_utilization_percent/);
+  assert.match(bridge, /cores currently available/);
+  assert.match(bridge, /system use/);
+  assert.match(bridge, /machine\.ram_available_gib/);
 });
