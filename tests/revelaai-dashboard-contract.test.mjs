@@ -129,7 +129,7 @@ test("AI compliance notice loading has a recovery action when the notice API is 
 test("Bible dashboard retains labels for all supported return destinations", () => {
   const bibleDashboard = read("../src/components/BibleDashboard.jsx");
   const labelsStart = bibleDashboard.indexOf("const dashboardLabels = Object.freeze({");
-  const labelsEnd = bibleDashboard.indexOf("\\n});", labelsStart);
+  const labelsEnd = bibleDashboard.indexOf("});", labelsStart);
   assert.ok(labelsStart >= 0 && labelsEnd > labelsStart, "Bible dashboard must define dashboardLabels before using the back-navigation label.");
   const labelsBlock = bibleDashboard.slice(labelsStart, labelsEnd);
   for (const [key, label] of Object.entries({
