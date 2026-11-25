@@ -921,6 +921,79 @@ const completeLogin = (data = {}) => {
   };
 
 
+  const handlePasskeySignIn = async () => {
+    setError("");
+    setMessage("");
+    if (!window.PublicKeyCredential || !navigator.credentials?.get) {
+      setError("Passkeys are not available in this browser. Use a supported browser on HTTPS or choose another sign-in method.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const options = await apiPost("/api/identity/passkeys/authentication/options", {});
+      const credential = await navigator.credentials.get({
+        publicKey: toBrowserPublicKeyOptions(options.publicKey || {}),
+      });
+      if (!credential) throw new Error("Passkey sign-in was cancelled.");
+      const payload = await apiPost("/api/identity/passkeys/authentication/verify", {
+        challenge_id: options.challenge_id,
+        credential: serialisePublicKeyCredential(credential, "authentication"),
+      });
+      await processLoginResponse(payload);
+    } catch (error) {
+      setError(error?.message || "Passkey sign-in failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneLoginRequest = async (event) => {
+    event?.preventDefault?.();
+    setError("");
+    setMessage("");
+    if (!contact.trim()) {
+      setError("Enter the phone number linked to your RevelaCode account.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const data = await apiPost("/api/identity/phone/login/request", { phone: contact.trim() });
+      setPhoneChallengeId(data.challenge_id || "");
+      setPhoneCode("");
+      setStep("phone-verify");
+      setMessage(data.message || "If this number belongs to a verified RevelaCode account, a sign-in code has been sent.");
+    } catch (error) {
+      setError(error?.message || "Could not request a phone sign-in code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneLoginVerify = async (event) => {
+    event?.preventDefault?.();
+    setError("");
+    setMessage("");
+    const cleanCode = String(phoneCode || "").replace(/\D/g, "").slice(0, 6);
+    if (!phoneChallengeId || cleanCode.length !== 6) {
+      setError("Enter the six-digit code sent to your phone.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const payload = await apiPost("/api/identity/phone/login/verify", {
+        challenge_id: phoneChallengeId,
+        phone: contact.trim(),
+        code: cleanCode,
+      });
+      setPhoneChallengeId("");
+      await processLoginResponse(payload);
+    } catch (error) {
+      setError(error?.message || "Phone sign-in verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleMfaVerification = async (e) => {
     e.preventDefault();
     setError("");
@@ -1670,8 +1743,12 @@ const completeLogin = (data = {}) => {
                   onSubmit={
                     step === "verify"
                       ? handleVerify
-                      : step === "mfa"
-                        ? handleMfaVerification
+                      : step === "phone"
+                        ? handlePhoneLoginRequest
+                        : step === "phone-verify"
+                          ? handlePhoneLoginVerify
+                          : step === "mfa"
+                            ? handleMfaVerification
                         : step === "mfa-setup"
                           ? handleMfaEnrollment
                           : handleSubmit
@@ -1770,10 +1847,7 @@ const completeLogin = (data = {}) => {
                       CONTACT
                   ================================================= */}
 
-                  {step !== "reset" &&
-                    step !== "mfa" &&
-                    step !== "mfa-setup" &&
-                    step !== "mfa-recovery" &&
+                  {(step === "form" || step === "verify" || step === "phone") &&
                     mode !== null && (
                       <label className="block">
                         <span
@@ -1784,7 +1858,7 @@ const completeLogin = (data = {}) => {
                             font-medium
                           "
                         >
-                          {mode === "register" ? "Email address" : "Username, email or phone"}
+                          {step === "phone" ? "Phone number" : mode === "register" ? "Email address" : "Username, email or phone"}
                         </span>
 
                         <div className="relative">
@@ -1807,8 +1881,10 @@ const completeLogin = (data = {}) => {
                                 e.target.value
                               )
                             }
-                            placeholder={mode === "login" ? "Username, email or phone" : "Email address"}
-                            autoComplete="username"
+                            placeholder={step === "phone" ? "+2547XXXXXXXX" : mode === "login" ? "Username, email or phone" : "Email address"}
+                            type={step === "phone" ? "tel" : "text"}
+                            inputMode={step === "phone" ? "tel" : "text"}
+                            autoComplete={step === "phone" ? "tel" : "username"}
                             className="
                               w-full
                               rounded-xl
@@ -1831,6 +1907,37 @@ const completeLogin = (data = {}) => {
                       </label>
                     )}
 
+                  {step === "phone" && (
+                    <section className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                      <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Enter the mobile number already verified on your RevelaCode account. We will send a short-lived sign-in code by SMS.</p>
+                      <button type="submit" disabled={loading} className="w-full rounded-xl bg-emerald-600 px-4 py-3.5 font-semibold text-white disabled:opacity-60">
+                        {loading ? "Sending code…" : "Send sign-in code"}
+                      </button>
+                      <button type="button" onClick={() => { setStep("form"); setError(""); setMessage(""); }} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold dark:border-white/10">Back to password sign-in</button>
+                    </section>
+                  )}
+
+                  {step === "phone-verify" && (
+                    <section className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Verify {contact}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">Enter the six-digit code sent by SMS. The code expires after five minutes.</p>
+                      </div>
+                      <input
+                        value={phoneCode}
+                        onChange={(event) => setPhoneCode(event.target.value.replace(/D/g, "").slice(0, 6))}
+                        autoComplete="one-time-code"
+                        inputMode="numeric"
+                        maxLength={6}
+                        placeholder="000000"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-center font-mono text-2xl tracking-[0.35em] outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-white/5"
+                      />
+                      <button type="submit" disabled={loading || phoneCode.length !== 6} className="w-full rounded-xl bg-emerald-600 px-4 py-3.5 font-semibold text-white disabled:opacity-60">
+                        {loading ? "Verifying…" : "Verify and sign in"}
+                      </button>
+                      <button type="button" onClick={() => { setStep("phone"); setPhoneChallengeId(""); setPhoneCode(""); setError(""); setMessage(""); }} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold dark:border-white/10">Change phone number</button>
+                    </section>
+                  )}
 
                   {/* =================================================
                       LOGIN PASSWORD
@@ -2484,16 +2591,37 @@ const completeLogin = (data = {}) => {
                             <span>or continue with</span>
                             <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
                           </div>
-                          <button
-                            type="button"
-                            onClick={handleGoogleSignIn}
-                            disabled={loading}
-                            className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-                          >
-                            <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-sm font-black text-blue-600">G</span>
-                            Continue with Google
-                          </button>
+                          {identityProviders.google?.enabled && (
+                            <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="flex min-h-[49px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+                              <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-sm font-black text-blue-600">G</span>
+                              Continue with Google
+                            </button>
+                          )}
+                          {identityProviders.microsoft?.enabled && (
+                            <button type="button" onClick={() => handleProviderSignIn("microsoft")} disabled={loading} className="flex min-h-[49px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+                              <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-sm font-black text-sky-600">M</span>
+                              Continue with Microsoft
+                            </button>
+                          )}
+                          {identityProviders.github?.enabled && (
+                            <button type="button" onClick={() => handleProviderSignIn("github")} disabled={loading} className="flex min-h-[49px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+                              <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-sm font-black text-slate-800 dark:text-white">GH</span>
+                              Continue with GitHub
+                            </button>
+                          )}
                         </>
+                      )}
+                      {mode === "login" && identityProviders.passkeys?.enabled && typeof window !== "undefined" && Boolean(window.PublicKeyCredential) && (
+                        <button type="button" onClick={handlePasskeySignIn} disabled={loading} className="flex min-h-[49px] w-full items-center justify-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+                          <span className="text-emerald-700 dark:text-emerald-300"><Fingerprint size={19} /></span>
+                          {loading ? "Waiting for passkey…" : "Use a passkey"}
+                        </button>
+                      )}
+                      {mode === "login" && identityProviders.phone?.enabled && (
+                        <button type="button" onClick={() => { setContact(""); setMode("login"); setStep("phone"); setError(""); setMessage(""); }} disabled={loading} className="flex min-h-[49px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+                          <span className="text-emerald-700 dark:text-emerald-300"><Smartphone size={18} /></span>
+                          Continue with phone
+                        </button>
                       )}
 
                       {mode === "login" && (
