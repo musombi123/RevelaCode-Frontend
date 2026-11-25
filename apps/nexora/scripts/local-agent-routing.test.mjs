@@ -251,3 +251,18 @@ test("Local Agent installation is user-friendly and discovery retries automatica
   assert.ok(!bridge.includes("Set-ExecutionPolicy"));
   assert.ok(!bridge.includes("git clone"));
 });
+
+
+test("NEXORA gates Local Agent discovery on Chrome Loopback Network permission", async () => {
+  const [bridge, workspace] = await Promise.all([
+    readComponent("NexoraDeviceBridge.jsx"),
+    readComponent("NexoraFoundryWorkspace.jsx"),
+  ]);
+  assert.ok(bridge.includes('navigator.permissions.query({ name: "loopback-network" })'));
+  assert.ok(bridge.includes('if (permissionStatus.state === "granted")'));
+  assert.ok(bridge.includes("Do not trigger Chrome's local-network permission prompt on page load."));
+  assert.ok(bridge.includes('targetAddressSpace: "loopback"'));
+  assert.ok(bridge.includes('loopbackPermission !== "granted"'));
+  assert.ok(bridge.includes("Loopback Network"));
+  assert.equal((workspace.match(/targetAddressSpace: "loopback"/g) || []).length, 3);
+});
