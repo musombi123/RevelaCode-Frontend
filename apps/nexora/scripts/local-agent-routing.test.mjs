@@ -223,8 +223,10 @@ test("Local Agent connection refusal is explained and pairing waits for a succes
   assert.match(bridge, /agentReachable\) \{/);
   assert.match(bridge, /disabled=\{busy \|\| !agentReachable \|\| Boolean\(token\) \|\| !accountAccessToken\}/);
   assert.match(bridge, /Check connection/);
-  assert.match(bridge, /install-nexora-local-agent\.ps1/);
-  assert.match(bridge, /Copy PowerShell install command/);
+  assert.ok(bridge.includes("releases/latest/download/NEXORA-Local-Agent-Setup.exe"));
+  assert.match(bridge, /Download NEXORA for Windows/);
+  assert.match(bridge, /No Git, Python installation, terminal commands or manual code entry/);
+  assert.doesNotMatch(bridge, /Copy PowerShell install command|Set-ExecutionPolicy|git clone|\.ps1/);
   assert.doesNotMatch(bridge, /setInterval|window\.setInterval/);
 });
 
