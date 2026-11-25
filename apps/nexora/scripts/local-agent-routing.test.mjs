@@ -230,3 +230,17 @@ test("Local Agent connection refusal is explained and pairing waits for a succes
   assert.doesNotMatch(bridge, /setInterval|window\.setInterval/);
 });
 
+
+
+test("Local Agent uses Chrome Loopback Network permission before any page-load probe", async () => {
+  const [bridge, workspace] = await Promise.all([
+    readComponent("NexoraDeviceBridge.jsx"),
+    readComponent("NexoraFoundryWorkspace.jsx"),
+  ]);
+  assert.ok(bridge.includes('navigator.permissions.query({ name: "loopback-network" })'));
+  assert.ok(bridge.includes('if (permissionStatus.state === "granted")'));
+  assert.ok(bridge.includes("Do not trigger a Local Network Access prompt during page load."));
+  assert.ok(bridge.includes('targetAddressSpace: "loopback"'));
+  assert.equal((workspace.match(/targetAddressSpace: "loopback"/g) || []).length, 3);
+  assert.match(bridge, /Allow Loopback Network access for revelacode\.co\.ke/);
+});
