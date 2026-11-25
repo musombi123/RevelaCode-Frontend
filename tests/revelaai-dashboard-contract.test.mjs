@@ -125,12 +125,13 @@ test("AI compliance notice loading has a recovery action when the notice API is 
 
 
 
+
 test("Bible dashboard retains labels for all supported return destinations", () => {
   const bibleDashboard = read("../src/components/BibleDashboard.jsx");
-  const labelsBlock = bibleDashboard.match(
-    /const dashboardLabels = Object\\.freeze\\(\\{([\\s\\S]*?)\\}\\);/,
-  );
-  assert.ok(labelsBlock, "Bible dashboard must define dashboardLabels before using the back-navigation label.");
+  const labelsStart = bibleDashboard.indexOf("const dashboardLabels = Object.freeze({");
+  const labelsEnd = bibleDashboard.indexOf("\\n});", labelsStart);
+  assert.ok(labelsStart >= 0 && labelsEnd > labelsStart, "Bible dashboard must define dashboardLabels before using the back-navigation label.");
+  const labelsBlock = bibleDashboard.slice(labelsStart, labelsEnd);
   for (const [key, label] of Object.entries({
     home: "Home",
     faith: "Faith",
@@ -145,10 +146,10 @@ test("Bible dashboard retains labels for all supported return destinations", () 
     settings: "Settings",
   })) {
     assert.ok(
-      labelsBlock[1].includes(`${key}: "${label}"`),
+      labelsBlock.includes(`${key}: "${label}"`),
       "Missing Bible return-navigation label: " + key,
     );
   }
-  assert.match(bibleDashboard, /dashboardLabels\\[previousDashboard\\]/);
-  assert.match(bibleDashboard, /\\.replace\\(\\/\\[-_\\]\\/g, " " \\)/);
+  assert.ok(bibleDashboard.includes("dashboardLabels[previousDashboard]"));
+  assert.ok(bibleDashboard.includes('.replace(/[-_]/g, " ")'));
 });
