@@ -104,7 +104,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       return true;
     } catch (error) {
       setAgentReachable(false);
-      let permissionState = loopbackPermission;
+      let permissionState = "prompt";
       try {
         if (navigator.permissions?.query) {
           const permission = await navigator.permissions.query({ name: "loopback-network" });
@@ -124,7 +124,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     } finally {
       setAgentChecking(false);
     }
-  }, [onConnectionChange, loopbackPermission]);
+  }, [onConnectionChange]);
 
   useEffect(() => {
     let cancelled = false;
