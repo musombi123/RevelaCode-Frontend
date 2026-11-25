@@ -225,7 +225,7 @@ test("Asset Library displays the server-installed toolchain and persistent works
   }
   assert.ok(panel.includes("/api/compute/capabilities"));
   assert.ok(panel.includes("Persistent workspace volume is mounted and writable."));
-  assert.ok(panel.includes("secure project transfer and remote job execution are still disabled"));
+  assert.ok(panel.includes("Tool readiness is not job-execution readiness"));
 });
 
 test("Signed-in users get a server-only toolchain check before pairing the local device", async () => {
@@ -304,7 +304,7 @@ test("Managed Toolchain separates core workload tools from optional Android SDK 
   assert.match(panel, /Android export is optional/);
   assert.match(panel, /absence does not disable 3D or movie-processing tools/);
   assert.match(panel, /Tool readiness is not job-execution readiness/);
-  assert.match(panel, /secure project transfer, durable remote job submission and artifact retrieval remain disabled/);
+  assert.match(panel, /Secure project transfer, durable remote job submission and artifact retrieval remain disabled/);
 });
 
 test("Android SDK and ADB are displayed as optional capabilities, not core toolchain failures", async () => {
