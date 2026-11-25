@@ -240,7 +240,7 @@ test("Device Lab requires explicit consent before sending local resource metrics
 test("Local Agent installation is user-friendly and discovery retries automatically after install", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.ok(bridge.includes("const checkAgent = useCallback"));
-  assert.ok(bridge.includes("releases/latest/download/NEXORA-Local-Agent-Setup.exe"));
+  assert.ok(bridge.includes("api.github.com/repos/musombi123/Procedural-Game-Foundry/releases/latest"));
   assert.ok(bridge.includes("starts it automatically when you sign in again"));
   assert.ok(bridge.includes("No Git, Python, terminal or pasted commands are required"));
   assert.ok(bridge.includes("attempts < 18"));
