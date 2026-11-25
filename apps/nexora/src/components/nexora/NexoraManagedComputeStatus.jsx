@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, CheckCircle2, CircleHelp, Cpu, Database, HardDrive,
+  AlertTriangle, CheckCircle2, HelpCircle, Cpu, Database, HardDrive,
   RefreshCw, Server, ShieldCheck, Smartphone, Workflow, XCircle,
 } from "lucide-react";
 
@@ -243,7 +243,7 @@ export default function NexoraManagedComputeStatus({ accountAccessToken = "", lo
                       <span className="ml-2 text-[10px] text-slate-500">{requirements}</span>
                     </div>
                     <span className={"inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-bold " + (!hasStatus ? "bg-slate-900 text-slate-500" : supported ? "bg-emerald-950/40 text-emerald-200" : "bg-slate-900 text-slate-400")}>
-                      {hasStatus && supported ? <CheckCircle2 size={10} /> : <CircleHelp size={10} />}
+                      {hasStatus && supported ? <CheckCircle2 size={10} /> : <HelpCircle size={10} />}
                       {!hasStatus ? "Not checked" : supported ? "Tool support available" : "Requirements missing"}
                     </span>
                   </div>
