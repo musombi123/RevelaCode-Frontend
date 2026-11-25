@@ -314,3 +314,20 @@ test("Android SDK and ADB are displayed as optional capabilities, not core toolc
   assert.match(panel, /\["blender", "Blender", false\]/);
   assert.match(panel, /\["godot", "Godot 4", false\]/);
 });
+
+
+test("Device Lab presents Android SDK as optional and exposes per-workload server tools", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /\["android_sdk", "Android SDK", true\]/);
+  assert.match(bridge, /\["adb", "ADB", true\]/);
+  assert.match(bridge, /core_toolchain_ready \?\? managedCapabilities\.toolchain_ready/);
+  assert.match(bridge, /managedCapabilities\.workload_capabilities/);
+  assert.match(bridge, /Android SDK\/ADB are optional and do not disable 3D or movie-processing capabilities/);
+  assert.match(bridge, /No project data was transferred and no job was started/);
+});
+
+test("Device Lab distinguishes no safe execution target from a server size-only failure", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /resource, tool and storage checks/);
+  assert.doesNotMatch(bridge, /The standard server worker is not large enough for this workload/);
+});
