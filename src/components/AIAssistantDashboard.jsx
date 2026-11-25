@@ -32,6 +32,7 @@ import LocalWorkspaceProposalReview from "@/components/LocalWorkspaceProposalRev
 import RevelaAIStudio from "@/components/RevelaAIStudio.jsx";
 import RevelaAIFilesLibrary from "@/components/RevelaAIFilesLibrary.jsx";
 import { executeRevelaAIWorkspace } from "@/ai/revelaAIClient.js";
+import { BACKEND_ORIGIN, REVELAAI_ORIGIN } from "@/config/serviceOrigins.js";
 import { getLocalWorkspaceContext } from "@/ai/localWorkspaceAgent.js";
 import { buildWorkspaceExportPrompt, inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
 import WelcomeScreen from "@/components/WelcomeScreen";
@@ -590,10 +591,7 @@ export default function AIAssistantDashboard({
     "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
   ].join(" ");
     const complianceApiBaseValue = String(
-    import.meta.env.VITE_REVELACODE_API_URL ||
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_BACKEND_URL ||
-    "https://revelacode-backend.onrender.com"
+    import.meta.env.VITE_REVELACODE_API_URL || BACKEND_ORIGIN
   ).trim();
   const complianceApiBase = complianceApiBaseValue.endsWith("/")
     ? complianceApiBaseValue.slice(0, -1)
@@ -814,7 +812,7 @@ export default function AIAssistantDashboard({
     }
 
     const controller = new AbortController();
-    const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+    const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
     const identity = String(user?.user_id || user?.userId || userScope);
 
     authFetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history?hub=${encodeURIComponent(activeBrainHub)}`, {
@@ -1645,7 +1643,7 @@ export default function AIAssistantDashboard({
           // Interpret free on-device perception with the existing text provider.
           // The image itself is not uploaded to a paid vision provider.
           if (attachedFile && localText && !attachedFile.type?.startsWith("video/") && !freeMode) {
-            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
             
             if (typeof authFetch === "function") {
               try {
@@ -1713,7 +1711,7 @@ export default function AIAssistantDashboard({
             } else {
             // Adaptive mode uses the hosted model. Network failures are recovered below
             // using the free local engine instead of leaving a dead-end error bubble.
-            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
             let localProjectContext = null;
             try {
               localProjectContext = await getLocalWorkspaceContext(requestMessage || cleaned);
@@ -1857,7 +1855,7 @@ export default function AIAssistantDashboard({
             !freeMode
           ) {
             const observations = localText;
-            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
             try {
               updateLoadingStage("connecting");
               const visionResponse = await authFetch(`${apiBase}/ai`, {
@@ -2328,7 +2326,7 @@ export default function AIAssistantDashboard({
 
   const handleArtifactAction = useCallback(async (action, artifact, extra = {}) => {
     const artifactId = String(artifact?.id || "");
-    const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+    const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
     if (!artifactId && action !== "connect_canva") throw new Error("The artifact identifier is missing.");
 
     // Open synchronously within the user click so mobile browsers do not block Canva.
@@ -2523,7 +2521,7 @@ export default function AIAssistantDashboard({
           ? `Generate an image of: ${userMessage.text}`
           : userMessage.text;
 
-        const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+        const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
         const response = await authFetch(`${apiBase}/ai`, {
           method: "POST",
           headers: {
@@ -3156,7 +3154,7 @@ export default function AIAssistantDashboard({
           }}
           onAskAI={async (artifact) => {
             const artifactId = String(artifact?.id || "");
-            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
             try {
               const response = await authFetch(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/edit", {
                 method: "POST",
@@ -3188,7 +3186,7 @@ export default function AIAssistantDashboard({
           onOpenStudio={(artifact) => {
             void (async () => {
               try {
-                const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+                const apiBase = REVELAAI_ORIGIN.replace(/\/$/, "");
                 const response = await authFetch(apiBase + "/api/artifacts/" + encodeURIComponent(artifact.id) + "/edit", {
                   method: "POST",
                   headers: { "Content-Type": "application/json", Accept: "application/json" },
