@@ -60,8 +60,6 @@ export default function NexoraManagedComputeStatus({ accountAccessToken = "" }) 
   const toolchain = status?.toolchain || {};
   const workloadCapabilities = status?.workload_capabilities || {};
   const coreReady = Boolean(status?.available && (status?.core_toolchain_ready ?? status?.toolchain_ready));
-  const androidReady = Boolean(toolchain.android_sdk && toolchain.adb);
-
   return <section className="mt-3 border border-cyan-900/60 bg-[#0a171c] p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-2">
