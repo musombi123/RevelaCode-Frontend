@@ -499,17 +499,41 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         <button type="button" className={button} disabled={managedBusy} onClick={refreshManagedCapabilities}><RefreshCw size={12}/>{managedBusy ? "Checking…" : "Recheck server"}</button>
       </div>
       {managedCapabilities && <div className="mt-3 flex flex-wrap gap-2">
-        {[[ "blender","Blender" ],[ "godot","Godot 4" ],[ "ffmpeg","FFmpeg" ],[ "ffprobe","FFprobe" ],[ "java","Java 17" ],[ "adb","ADB" ],[ "android_sdk","Android SDK" ],[ "android_apk_inspector","APK Inspector" ]].map(([key,label])=><span key={key} className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold "+(managedCapabilities.toolchain?.[key]?"bg-emerald-950/40 text-emerald-200":"bg-slate-900 text-slate-500")}>{managedCapabilities.toolchain?.[key]?<CheckCircle2 size={11}/>:<XCircle size={11}/>} {label}</span>)}
+        {[
+          ["blender", "Blender", false], ["godot", "Godot 4", false],
+          ["ffmpeg", "FFmpeg", false], ["ffprobe", "FFprobe", false],
+          ["java", "Java 17", false], ["adb", "ADB", true],
+          ["android_sdk", "Android SDK", true], ["android_apk_inspector", "APK Inspector", true],
+        ].map(([key, label, optional]) => {
+          const installed = managedCapabilities.toolchain?.[key] === true;
+          return <span key={key} className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold " + (installed ? "bg-emerald-950/40 text-emerald-200" : optional ? "bg-amber-950/30 text-amber-200" : "bg-slate-900 text-slate-500")}>
+            {installed ? <CheckCircle2 size={11}/> : <XCircle size={11}/>} {label}{optional ? " · optional" : ""}
+          </span>;
+        })}
       </div>}
-      {managedCapabilities && <p className={"mt-2 text-[10px] "+(managedCapabilities.toolchain_ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.toolchain_ready ? "Server toolchain ready." : "The worker is reachable but the complete toolchain is not ready."}</p>}
-      {managedCapabilities && <p className={"mt-1 text-[10px] "+(managedCapabilities.workspace_storage?.ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.workspace_storage?.ready ? "Persistent server workspace volume verified." : managedCapabilities.workspace_storage?.note || "Persistent workspace storage is not verified."}</p>}
+      {managedCapabilities && <p className={"mt-2 text-[10px] "+(managedCapabilities.core_toolchain_ready ?? managedCapabilities.toolchain_ready ? "text-emerald-300":"text-amber-300")}>
+        {(managedCapabilities.core_toolchain_ready ?? managedCapabilities.toolchain_ready) ? "Core server toolchain ready." : "Core server tools are not fully ready."}
+        {" "}Android SDK/ADB are optional and do not disable 3D or movie-processing capabilities.
+      </p>}
+      {managedCapabilities?.workload_capabilities && <div className="mt-2 grid gap-1 sm:grid-cols-3">
+        {[["procedural_3d", "3D"], ["movie_processing", "Movie"], ["android_export", "Android export"]].map(([key, label]) => {
+          const ready = managedCapabilities.workload_capabilities[key] === true;
+          return <p key={key} className="flex items-center gap-1 text-[9px] text-slate-400">
+            {ready ? <CheckCircle2 size={10} className="text-emerald-300"/> : <XCircle size={10} className="text-amber-300"/>}
+            {label}: {ready ? "tools ready" : "tools missing"}
+          </p>;
+        })}
+      </div>}
+      {managedCapabilities && <p className={"mt-1 text-[10px] "+(managedCapabilities.workspace_storage?.ready?"text-emerald-300":"text-amber-300")}>
+        {managedCapabilities.workspace_storage?.ready ? "Persistent server workspace volume verified." : managedCapabilities.workspace_storage?.note || "Persistent workspace storage is not verified."}
+      </p>}
       {!managedCapabilities && <p className="mt-2 text-[10px] text-amber-300">{managedError || "Sign in to check the managed server toolchain."}</p>}
       {managedPlan && <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/60 p-3 text-[10px] leading-5">
         <strong className="text-cyan-200">PLACEMENT RECOMMENDATION · {String(managedPlan.execution_location || "unknown").replaceAll("_"," ").toUpperCase()}</strong>
         <p className="mt-1 text-slate-300">{managedPlan.reason}</p>
         <p className="mt-1 text-slate-400">Local device metrics: not shared. Local capacity is treated as unknown.</p>
         {managedPlan.execution_location==="managed_server" && <p className="mt-1 text-amber-300">Server preflight passed. Secure project transfer and remote job execution are not enabled yet, so this recommendation has not uploaded or started any project work.</p>}
-        {managedPlan.execution_location==="unavailable" && <p className="mt-1 text-amber-300">The standard server worker is not large enough for this workload. Choose a lighter profile or wait for higher-capacity compute.</p>}
+        {managedPlan.execution_location==="unavailable" && <p className="mt-1 text-amber-300">No execution target passed the selected workload's resource, tool and storage checks. No project data was transferred and no job was started.</p>}
       </div>}
     </section>}
 
