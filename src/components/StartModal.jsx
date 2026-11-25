@@ -1927,7 +1927,7 @@ const completeLogin = (data = {}) => {
                       </div>
                       <input
                         value={phoneCode}
-                        onChange={(event) => setPhoneCode(event.target.value.replace(/D/g, "").slice(0, 6))}
+                        onChange={(event) => setPhoneCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
                         autoComplete="one-time-code"
                         inputMode="numeric"
                         maxLength={6}
@@ -2599,13 +2599,13 @@ const completeLogin = (data = {}) => {
                               Continue with Google
                             </button>
                           )}
-                          {identityProviders.microsoft?.enabled && (
+                          {mode === "login" && identityProviders.microsoft?.enabled && (
                             <button type="button" onClick={() => handleProviderSignIn("microsoft")} disabled={loading} className="flex min-h-[49px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
                               <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-sm font-black text-sky-600">M</span>
                               Continue with Microsoft
                             </button>
                           )}
-                          {identityProviders.github?.enabled && (
+                          {mode === "login" && identityProviders.github?.enabled && (
                             <button type="button" onClick={() => handleProviderSignIn("github")} disabled={loading} className="flex min-h-[49px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
                               <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-sm font-black text-slate-800 dark:text-white">GH</span>
                               Continue with GitHub
