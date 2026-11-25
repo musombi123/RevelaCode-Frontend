@@ -146,6 +146,20 @@ function normalizeWebBook(payload, fallbackBookName) {
    DASHBOARD LABELS
 ========================================================= */
 
+const dashboardLabels = Object.freeze({
+  home: "Home",
+  faith: "Faith",
+  education: "Education",
+  shamba: "Shamba",
+  biashara: "Biashara",
+  community: "Community",
+  events: "Events",
+  prophecy: "Prophecy",
+  referential: "Referential",
+  profile: "Profile",
+  settings: "Settings",
+});
+
 /* =========================================================
    REUSABLE BACK BUTTON
 ========================================================= */
