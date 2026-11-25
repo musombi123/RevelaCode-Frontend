@@ -33,8 +33,13 @@ for (const host of required) {
   }
 }
 for (const host of forbidden) {
-  if (bundle.includes(host)) {
-    throw new Error(`Production service origin leaked into staging bundle: ${host}`);
+  const leakedFiles = files.filter(file =>
+    fs.readFileSync(file, "utf8").includes(host)
+  );
+  if (leakedFiles.length) {
+    throw new Error(
+      `Production service origin leaked into staging bundle: ${host}\\nFiles: ${leakedFiles.map(file => path.relative(dist, file)).join(", ")}`
+    );
   }
 }
 console.log(`RPSVI staging bundle verified across ${files.length} built assets.`);
