@@ -216,7 +216,7 @@ test("Local Agent pairing is code-free and requires a signed-in user's explicit 
 
 
 
-test("Asset Library displays the managed server toolchain installed by NEXORA", async () => {
+test("Asset Library displays the server-installed toolchain and persistent workspace readiness", async () => {
   const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
   const panel = await readComponent("NexoraManagedComputeStatus.jsx");
   assert.match(workspace, /NexoraManagedComputeStatus accountAccessToken/);
@@ -224,20 +224,24 @@ test("Asset Library displays the managed server toolchain installed by NEXORA", 
     assert.ok(panel.includes('"'+tool+'"'));
   }
   assert.ok(panel.includes("/api/compute/capabilities"));
-  assert.ok(panel.includes("remote job execution are still disabled"));
   assert.ok(panel.includes("Persistent workspace volume is mounted and writable."));
+  assert.ok(panel.includes("secure project transfer and remote job execution are still disabled"));
 });
 
-test("A signed-in user gets a server-only placement plan without sharing local hardware metrics", async () => {
+test("Signed-in users get a server-only toolchain check before pairing the local device", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.ok(bridge.includes("requestManagedPlan(null, workloadProfile, false)"));
-  assert.ok(bridge.includes("The default placement check sends no local device data"));
+  assert.ok(bridge.includes("The default placement check sends no local device information"));
   assert.ok(bridge.includes("SERVER-MANAGED PRODUCTION TOOLCHAIN"));
   assert.ok(bridge.includes("Local device metrics: not shared. Local capacity is treated as unknown."));
+  assert.ok(bridge.includes("LOCAL DEVICE BRIDGE NOT CONNECTED · OPTIONAL"));
+  assert.ok(bridge.includes('navigator.permissions.query({ name: "loopback-network" })'));
+  assert.ok(bridge.includes("installerRelease.url"));
   assert.ok(bridge.includes("job execution are not enabled yet"));
 });
 
-test("Device Lab requires explicit consent before sending local resource metrics", async () => {
+
+test("Device Lab sends local resource metrics only after explicit consent", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.match(bridge, /shareHardwareMetrics, setShareHardwareMetrics/);
   assert.match(bridge, /consent_to_share_hardware_metrics: metricsShared/);
@@ -248,17 +252,43 @@ test("Device Lab requires explicit consent before sending local resource metrics
   assert.doesNotMatch(bridge, /Hardware details remain local; only the final game build/);
 });
 
-test("The local device bridge is optional and no end-user installer or terminal command is exposed", async () => {
+test("Local Agent installation is user-friendly and discovery retries automatically after install", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.ok(bridge.includes("const checkAgent = useCallback"));
-  assert.ok(bridge.includes("LOCAL DEVICE BRIDGE NOT CONNECTED · OPTIONAL"));
-  assert.ok(bridge.includes("Server toolchain checks do not require local pairing"));
+  assert.ok(bridge.includes("api.github.com/repos/musombi123/Procedural-Game-Foundry/releases/latest"));
+  assert.ok(bridge.includes("starts it automatically when you sign in again"));
+  assert.ok(bridge.includes("No Git, Python, terminal or pasted commands are required"));
   assert.ok(bridge.includes("attempts < 18"));
   assert.ok(bridge.includes("window.setTimeout"));
-  assert.ok(!bridge.includes("NEXORA-Local-Agent-Setup.exe"));
-  assert.ok(!bridge.includes("Download Windows Installer"));
+  assert.ok(bridge.includes("Check again"));
   assert.ok(!bridge.includes("Copy PowerShell install command"));
   assert.ok(!bridge.includes("install-nexora-local-agent.ps1"));
   assert.ok(!bridge.includes("Set-ExecutionPolicy"));
   assert.ok(!bridge.includes("git clone"));
+});
+
+
+test("NEXORA gates Local Agent discovery on Chrome Loopback Network permission", async () => {
+  const [bridge, workspace] = await Promise.all([
+    readComponent("NexoraDeviceBridge.jsx"),
+    readComponent("NexoraFoundryWorkspace.jsx"),
+  ]);
+  assert.ok(bridge.includes('navigator.permissions.query({ name: "loopback-network" })'));
+  assert.ok(bridge.includes('if (permissionStatus.state === "granted")'));
+  assert.ok(bridge.includes("Do not trigger Chrome's local-network permission prompt on page load."));
+  assert.ok(bridge.includes('targetAddressSpace: "loopback"'));
+  assert.ok(bridge.includes('loopbackPermission !== "granted"'));
+  assert.ok(bridge.includes("Loopback Network"));
+  assert.equal((workspace.match(/targetAddressSpace: "loopback"/g) || []).length, 3);
+});
+
+
+test("Device Lab only offers the Windows installer after a signed release asset is published", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.ok(bridge.includes("releases/latest"));
+  assert.ok(bridge.includes('item?.name === "NEXORA-Local-Agent-Setup.exe"'));
+  assert.ok(bridge.includes('state: "not_published"'));
+  assert.ok(bridge.includes('installerRelease.state === "available" && <a href={installerRelease.url}'));
+  assert.ok(bridge.includes("The signed Windows installer is not published yet."));
+  assert.ok(bridge.includes("Check release"));
 });
