@@ -83,7 +83,7 @@ test("local team task board and unsupported marketplace integrations are labelle
   assert.match(pages, /Team-member permissions, cross-member assignments and comments require a collaborative team service/);
   assert.match(pages, /paid third-party marketplace checkout is not connected/i);
   const shell = read("apps/nexora/src/components/nexora/NexoraStudioShell.jsx");
-  assert.match(shell, /Account quota is not exposed by this service/);
+  assert.match(shell, /Account identity and billing use the NEXORA control plane/);
 });
 
 test("World Builder uses owner-scoped NEXORA endpoints and canonical save documents", () => {
