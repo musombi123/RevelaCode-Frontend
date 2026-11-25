@@ -1,6 +1,7 @@
 
 import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { BACKEND_ORIGIN } from "@/config/serviceOrigins.js";
 import {
   createOfflineQueuedError,
   isBrowserOffline,
@@ -17,8 +18,7 @@ import {
  * the backend origin only.
  */
 
-const DEFAULT_BACKEND_URL =
-  "https://revelacode-backend.onrender.com";
+const DEFAULT_BACKEND_URL = BACKEND_ORIGIN;
 
 const API_PREFIX = "/api/jumuiya/elimu";
 const ENV = import.meta.env || {};
