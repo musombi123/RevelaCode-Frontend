@@ -266,3 +266,14 @@ test("NEXORA gates Local Agent discovery on Chrome Loopback Network permission",
   assert.ok(bridge.includes("Loopback Network"));
   assert.equal((workspace.match(/targetAddressSpace: "loopback"/g) || []).length, 3);
 });
+
+
+test("Device Lab only offers the Windows installer after a signed release asset is published", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.ok(bridge.includes("releases/latest"));
+  assert.ok(bridge.includes('item?.name === "NEXORA-Local-Agent-Setup.exe"'));
+  assert.ok(bridge.includes('state: "not_published"'));
+  assert.ok(bridge.includes('installerRelease.state === "available" && <a href={installerRelease.url}'));
+  assert.ok(bridge.includes("The signed Windows installer is not published yet."));
+  assert.ok(bridge.includes("Check release"));
+});
