@@ -292,3 +292,25 @@ test("Device Lab only offers the Windows installer after a signed release asset 
   assert.ok(bridge.includes("The signed Windows installer is not published yet."));
   assert.ok(bridge.includes("Check release"));
 });
+
+
+test("Managed Toolchain separates core workload tools from optional Android SDK readiness", async () => {
+  const panel = await readComponent("NexoraManagedComputeStatus.jsx");
+  assert.match(panel, /core_toolchain_ready \?\? status\?\.toolchain_ready/);
+  assert.match(panel, /workloadCapabilities\[key\]/);
+  assert.match(panel, /procedural_3d/);
+  assert.match(panel, /movie_processing/);
+  assert.match(panel, /android_export/);
+  assert.match(panel, /Android export is optional/);
+  assert.match(panel, /absence does not disable 3D or movie-processing tools/);
+  assert.match(panel, /Tool readiness is not job-execution readiness/);
+  assert.match(panel, /secure project transfer, durable remote job submission and artifact retrieval remain disabled/);
+});
+
+test("Android SDK and ADB are displayed as optional capabilities, not core toolchain failures", async () => {
+  const panel = await readComponent("NexoraManagedComputeStatus.jsx");
+  assert.match(panel, /\["adb", "ADB", true\]/);
+  assert.match(panel, /\["android_sdk", "Android SDK", true\]/);
+  assert.match(panel, /\["blender", "Blender", false\]/);
+  assert.match(panel, /\["godot", "Godot 4", false\]/);
+});
