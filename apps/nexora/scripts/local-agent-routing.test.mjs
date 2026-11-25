@@ -213,3 +213,18 @@ test("Local Agent pairing is code-free and requires a signed-in user's explicit 
   assert.match(bridge, /Allow & connect this computer/);
   assert.match(bridge, /disabled=\{busy \|\| Boolean\(token\) \|\| !accountAccessToken\}/);
 });
+
+
+test("Local Agent connection refusal is explained and pairing waits for a successful health check", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /const checkAgent = useCallback/);
+  assert.match(bridge, /fetch\(\`\$\{API\}\/health\`/);
+  assert.match(bridge, /Cannot reach 127\.0\.0\.1:8765/);
+  assert.match(bridge, /agentReachable\) \{/);
+  assert.match(bridge, /disabled=\{busy \|\| !agentReachable \|\| Boolean\(token\) \|\| !accountAccessToken\}/);
+  assert.match(bridge, /Check connection/);
+  assert.match(bridge, /install-nexora-local-agent\.ps1/);
+  assert.match(bridge, /Copy PowerShell install command/);
+  assert.doesNotMatch(bridge, /setInterval|window\.setInterval/);
+});
+
