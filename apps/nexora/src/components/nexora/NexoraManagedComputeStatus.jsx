@@ -73,8 +73,11 @@ export default function NexoraManagedComputeStatus({ accountAccessToken = "" }) 
     {error && <p className="mt-2 flex items-start gap-1.5 text-[10px] leading-5 text-amber-300"><AlertTriangle size={12} className="mt-1 shrink-0"/>{error}</p>}
     {!error && status && <p className={"mt-2 flex items-start gap-1.5 text-[10px] leading-5 " + (ready ? "text-emerald-300" : "text-amber-300")}>
       {ready ? <CheckCircle2 size={12} className="mt-1 shrink-0"/> : <AlertTriangle size={12} className="mt-1 shrink-0"/>}
-      {ready ? "Managed toolchain is installed and responding." : "Managed worker is reachable, but one or more toolchain items are not ready."}
+      {ready ? "Managed server toolchain is installed and responding." : "Managed worker is reachable, but one or more toolchain items are not ready."}
     </p>}
-    <p className="mt-2 text-[9px] leading-5 text-slate-500"><ShieldCheck size={11} className="mr-1 inline"/>This checks server tools only. Imported projects and asset downloads remain on your paired computer. Managed remote job execution is activated separately after the queue and secure artifact-transfer service are enabled.</p>
+    {status && <p className={"mt-1 text-[10px] leading-5 " + (status.workspace_storage?.ready ? "text-emerald-300" : "text-amber-300")}>
+      {status.workspace_storage?.ready ? "Persistent workspace volume is mounted and writable." : status.workspace_storage?.note || "Persistent workspace volume has not been verified."}
+    </p>}
+    <p className="mt-2 text-[9px] leading-5 text-slate-500"><ShieldCheck size={11} className="mr-1 inline"/>The server toolchain is independent of your PC's installed software. This phase checks tools and resource capacity; secure project transfer and remote job execution are still disabled. Physical-phone USB/Wi-Fi testing uses the optional paired device bridge.</p>
   </section>;
 }
