@@ -211,7 +211,7 @@ test("Local Agent pairing is code-free and requires a signed-in user's explicit 
   assert.match(bridge, /consent: true/);
   assert.match(bridge, /account_access_token: accountAccessToken/);
   assert.match(bridge, /Allow & connect this computer/);
-  assert.match(bridge, /disabled=\{busy \|\| Boolean\(token\) \|\| !accountAccessToken\}/);
+  assert.match(bridge, /disabled=\{busy \|\| !agentReachable \|\| Boolean\(token\) \|\| !accountAccessToken\}/);
 });
 
 
