@@ -16,7 +16,7 @@ const NAV_GROUPS = [
   { label: "PRODUCTION", items: [
     { id: "assets", label: "Asset Library", icon: Layers3 },
     { id: "build", label: "Build & Test", icon: Play },
-    { id: "device-lab", label: "Device Lab", icon: Smartphone },
+    { id: "device-lab", label: "Connected Devices", icon: Smartphone },
   ]},
 ];
 
