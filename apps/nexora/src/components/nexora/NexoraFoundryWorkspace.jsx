@@ -1,7 +1,6 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-const AndroidBuildConsole = lazy(() => import("./AndroidBuildConsole.jsx"));
 const NexoraDeviceBridge = lazy(() => import("./NexoraDeviceBridge.jsx"));
-const NexoraManagedComputeStatus = lazy(() => import("./NexoraManagedComputeStatus.jsx"));
+const NexoraBuildTestCenter = lazy(() => import("./NexoraBuildTestCenter.jsx"));
 const CreatorFlowPanel = lazy(() => import("./CreatorFlowPanel.jsx"));
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
@@ -397,7 +396,7 @@ export default function NexoraFoundryWorkspace() {
   const localEngineFetch = useCallback(async (input, options = {}) => {
     const path = resolveLocalEngineUrl(input, API_BASE, LOCAL_AGENT_BASE);
     const token = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
-    if (!token) throw new Error("Connect your computer in NEXORA > Device Lab before opening projects or starting production.");
+    if (!token) throw new Error("Connect your computer in NEXORA > Connected Devices before opening projects or starting local production.");
     const headers = new Headers(options.headers || {});
     headers.set("Authorization", "Bearer " + token);
     headers.set("Accept", headers.get("Accept") || "application/json");
@@ -1696,8 +1695,8 @@ export default function NexoraFoundryWorkspace() {
     ai:["AI Studio","Review production tools, AI jobs and Creator Flow"],
     world:["World Builder","Organize scene nodes, inspect transforms and add procedural templates"],
     assets:["Asset Library","Manage imported 3D models and production media"],
-    build:["Build & Test","Configure Android builds, export targets and inspect actual worker results"],
-    "device-lab":["Device Lab","Pair your local desktop companion and test on connected devices"],
+    build:["Build & Test","Prepare builds, review compute readiness and test on connected devices"],
+    "device-lab":["Connected Devices","Manage the desktop companion and test on a physical Android device"],
     factory:["Desktop Factory","Configure the local workspace, toolchains, recovery points and store handoff"],
     analytics:["Analytics","Production metrics calculated from loaded project and worker records"],
     team:["Team & Tasks","Manage tasks saved with projects on the paired computer and your production workflow"],
@@ -2092,60 +2091,36 @@ export default function NexoraFoundryWorkspace() {
           validationIssues={validationIssues}
         />}
 
-        {studioView === "build" && <div className="mx-auto w-full max-w-4xl">
-          <aside ref={exportRef} className="min-w-0 border border-amber-700/50 bg-[#0b1118] p-2">
-            <h2 className="text-center text-sm font-black text-amber-200">PERFORMANCE & EXPORT</h2>
-            <div className="mt-2 border border-slate-700 bg-[#111922] p-2"><b className="text-xs text-cyan-200">PLATFORM TARGET</b>{activeProject&&<select aria-label="Project target" className="mt-2 w-full border border-slate-700 bg-[#080d12] p-2 text-xs text-cyan-100" value={activeProject.settings?.target||"Desktop"} onChange={event=>patchProject(project=>({...project,settings:{...project.settings,target:event.target.value}}))}><option>Desktop</option><option>Android</option><option>Desktop + Android</option></select>}</div>
-            <div className="mt-2 border border-slate-700 bg-[#111922] p-2"><b className="text-xs text-cyan-200">ENGINE TELEMETRY</b><div className="mt-2 text-[10px] text-slate-400">{apiStatus.state==="online"?"Foundry API reachable":"Foundry API unavailable"}</div><div className="mt-2 border border-slate-800 p-2 text-[9px] text-slate-400">GPU / VRAM / temperature sensors are not exposed by this browser. A trusted desktop sensor agent must be installed before NEXORA can report these values.</div><div className="mt-2 text-[9px] text-slate-500">No estimated or fabricated benchmark values are displayed.</div><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1.5 text-[9px] text-cyan-100"><RefreshCw size={12} className="mr-1 inline"/> CHECK FOUNDRY SERVICE</button></div>
-            <div className="mt-2 text-xs font-black text-amber-200">EXPORT TO TARGETS</div><div className="mt-1 grid grid-cols-2 gap-1">{[["WINDOWS","windows"],["LINUX","linux"],["ANDROID","android"],["WEB","web"]].map(([label,target])=><button key={target} type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob("build.export",target)} className="border border-slate-700 bg-[#111922] p-2 text-[9px] font-bold text-cyan-100 hover:border-cyan-400/50 disabled:opacity-40">⬡ EXPORT<br/><span className="text-slate-400">{label}</span></button>)}</div>
-            
-            <div className="mt-2 text-[9px] font-black text-amber-200">RECENT JOBS</div>
-            <div className="mt-1 space-y-1">
-              {jobs.slice(0, 4).map((job) => (
-                <div key={job.id} className="border border-slate-800 bg-[#111922] p-2">
-                  <div className="flex justify-between gap-2 text-[9px]">
-                    <b className="truncate">{job.kind || "Foundry job"}</b>
-                    <span className={job.state === "completed" ? "text-emerald-300" : job.state === "failed" ? "text-rose-300" : "text-amber-200"}>{job.state} {job.progress}%</span>
-                  </div>
-                  <div className="mt-1 text-[9px] text-slate-500">{job.message}</div>
-                  {(job.artifacts || []).map((artifact) => (
-                    <button key={artifact.id} type="button" onClick={() => downloadArtifact(artifact)} className="mt-1 block truncate text-[9px] text-cyan-300 underline">
-                      {artifact.filename} · DOWNLOAD
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </aside>
-        </div>}
-
-        {studioView === "build" && <div>
-          <section className="mx-auto w-full max-w-5xl space-y-3">
-            <header className="border border-cyan-900/60 bg-[#0b1118] p-3">
-              <h2 className="text-lg font-black text-cyan-200">BUILD CENTRE</h2>
-              <p className="mt-1 text-xs text-slate-400">Configure game packages, queue a worker build, and pair a local desktop device bridge.</p>
-            </header>
-          <AndroidBuildConsole
-            settings={androidBuild}
-            onChange={setAndroidBuild}
-            onBuild={(settings)=> {
+        {studioView === "build" && (
+          <NexoraBuildTestCenter
+            activeProject={activeProject}
+            projectReady={cloudProjectActive}
+            localAgentConnected={localAgentConnected}
+            localAgentCapabilities={localAgentCapabilities}
+            accountAccessToken={nexoraSession?.access_token || ""}
+            onOpenProjects={() => setStudioView("projects")}
+            onOpenDevices={() => setStudioView("device-lab")}
+            androidSettings={androidBuild}
+            onAndroidChange={setAndroidBuild}
+            onBuildAndroid={(settings) => {
               if (settings.artifact_format === "aab" && settings.build_type !== "release") {
                 setNotice("Android App Bundles are release-only in NEXORA. Select Release before building an AAB.");
                 return;
               }
-              queueProductionJob("build.export","android",settings);
+              queueProductionJob("build.export", "android", settings);
             }}
-            iconAssets={studioAssets.filter((asset)=>asset.type === "png")}
-            disabled={!cloudProjectActive || busy}
-            deviceStatus="Game compilation runs on your paired computer. USB/wireless installation and logcat use the same local agent."
+            iconAssets={studioAssets.filter((asset) => asset.type === "png")}
+            buildDisabled={!cloudProjectActive || !localAgentConnected || busy}
+            jobs={jobs}
+            onExport={(target) => queueProductionJob("build.export", target)}
+            onDownloadArtifact={downloadArtifact}
           />
-          </section>
-        </div>}
+        )}
 
         {studioView === "device-lab" && <div>
           <section className="mx-auto mb-3 w-full max-w-5xl border border-cyan-900/60 bg-[#0b1118] p-4">
-            <h2 className="text-lg font-black text-cyan-200">DEVICE LAB</h2>
-            <p className="mt-1 text-xs text-slate-400">Install and pair the local compute agent. Check CPU, RAM, GPU and storage before generating games, then connect Android devices for direct installation.</p>
+            <h2 className="text-lg font-black text-cyan-200">CONNECTED DEVICES</h2>
+            <p className="mt-1 text-xs text-slate-400">Connect the desktop companion to run local production tasks and install or test APKs on a real Android phone. Browsing and browser-only drafts remain available without pairing.</p>
           </section>
           <div className="mx-auto w-full max-w-5xl">
             <NexoraDeviceBridge
@@ -2166,9 +2141,6 @@ export default function NexoraFoundryWorkspace() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={videoRightsConfirmed} onChange={event=>setVideoRightsConfirmed(event.target.checked)}/> I own this video or have permission to use it</label>
             <label className="flex items-center gap-2"><input type="checkbox" checked={originalAssetsConfirmed} onChange={event=>setOriginalAssetsConfirmed(event.target.checked)}/> Generate original assets; do not copy protected source assets</label>
           </div>
-          <NexoraManagedComputeStatus accountAccessToken={nexoraSession?.access_token || ""}/>
-
-
           <div className="mt-3 border border-cyan-800/60 bg-[#0d1722] p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div><h3 className="text-[11px] font-black tracking-widest text-cyan-200">BUILT-IN 2D ASSET PACKS</h3><p className="mt-1 text-[9px] text-slate-400">Real, locally generated SVG sprites, environment tiles, UI textures and WAV sound effects. CC0 original assets; works offline after installation.</p></div>
