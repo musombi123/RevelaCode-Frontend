@@ -216,7 +216,7 @@ test("Local Agent pairing is code-free and requires a signed-in user's explicit 
 
 
 
-test("Asset Library displays the managed server toolchain installed by NEXORA", async () => {
+test("Asset Library displays the server-installed toolchain and persistent workspace readiness", async () => {
   const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
   const panel = await readComponent("NexoraManagedComputeStatus.jsx");
   assert.match(workspace, /NexoraManagedComputeStatus accountAccessToken/);

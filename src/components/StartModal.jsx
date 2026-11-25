@@ -6,7 +6,8 @@ import React, {
 } from "react";
 
 import { createPortal } from "react-dom";
-import { useLocation } from "react-router-dom";
+import "./StartModal.css";
+import { useLocation, useNavigate } from "react-router-dom";
 import DemoLauncher from "@/demo/DemoLauncher.jsx";
 
 import {
@@ -42,6 +43,7 @@ export default function StartModal({ onComplete }) {
     getAccessToken,
   } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [modalDark, setModalDark] = useState(
     () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
   );
@@ -185,6 +187,15 @@ export default function StartModal({ onComplete }) {
     setShowResetPassword(false);
 
     autoSubmittedRef.current = false;
+  };
+
+  const handleClose = () => {
+    resetAll();
+    if (typeof onComplete === "function") {
+      onComplete();
+      return;
+    }
+    navigate("/", { replace: true });
   };
 
 
@@ -1433,106 +1444,55 @@ const completeLogin = (data = {}) => {
 
   return (
     <>
-      <div
-        className="
-          fixed inset-0 z-[100]
-          flex items-end justify-center
-          bg-[#e9f1ee]/95 backdrop-blur-xl
-          dark:bg-[#030907]/95
-          sm:items-center sm:px-4 sm:py-6
-        "
-      >
-        <div className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -right-24 h-80 w-80 rounded-full bg-teal-400/20 blur-3xl" />
-
-        <div
-          className="
-            relative flex w-full max-w-[440px] flex-col
-            max-h-[94dvh] overflow-hidden
-            rounded-t-[30px] border border-emerald-500/25
-            bg-white shadow-[0_30px_80px_-24px_rgba(4,60,45,0.4)]
-            dark:bg-[#08110e]
-            sm:max-h-[calc(100dvh-48px)] sm:rounded-[30px]
-          "
-          role="dialog"
-          aria-modal="true"
-          data-demo="welcome-entry"
-          aria-label="RevelaCode account access"
-        >
-          <header
-            className="
-              relative isolate shrink-0 overflow-hidden
-              border-b border-white/10 bg-[#04130f]
-              px-5 pb-5 pt-5 text-white
-              sm:px-6 sm:pb-6 sm:pt-6
-            "
-          >
-            <div
-              className="pointer-events-none absolute inset-0 opacity-90"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),radial-gradient(ellipse at 90% 0%,rgba(16,185,129,.38),transparent 65%),radial-gradient(ellipse at 0% 100%,rgba(45,212,191,.18),transparent 65%)",
-                backgroundSize: "28px 28px,28px 28px,auto,auto",
-              }}
-            />
-            <div className="relative z-10">
-              <div className="mb-5 flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <img
-                    src="/Logo.png"
-                    alt="RevelaCode logo"
-                    className="h-[38px] w-[38px] shrink-0 rounded-2xl border border-white/15 bg-white/5 object-contain p-1 shadow-lg shadow-emerald-900/30"
-                  />
-                  <span className="truncate text-[15px] font-bold tracking-tight">RevelaCode</span>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={toggleModalTheme}
-                    aria-label={modalDark ? "Switch to light theme" : "Switch to dark theme"}
-                    title={modalDark ? "Light theme" : "Dark theme"}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-slate-300 backdrop-blur transition hover:bg-white/[0.14] hover:text-white"
-                  >
-                    {modalDark ? <Sun size={17} /> : <Moon size={17} />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetAll}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-slate-300 backdrop-blur transition hover:bg-white/[0.14] hover:text-white"
-                    aria-label="Close"
-                    title="Close"
-                  >
-                    <X size={18} />
-                  </button>
+      <div className="rc-gateway-backdrop">
+        <div className="rc-gateway-backdrop-glow rc-gateway-backdrop-glow-one" aria-hidden="true" />
+        <div className="rc-gateway-backdrop-glow rc-gateway-backdrop-glow-two" aria-hidden="true" />
+        <div className="rc-gateway-dialog" role="dialog" aria-modal="true" aria-labelledby="rc-identity-heading" data-demo="welcome-entry" aria-label="RevelaCode account access">
+          <aside className="rc-gateway-brand" aria-label="RevelaCode ecosystem">
+            <div className="rc-gateway-brand-grid" aria-hidden="true" />
+            <div className="rc-gateway-brand-inner">
+              <div className="rc-gateway-brand-top">
+                <div className="rc-gateway-brand-mark"><img src="/Logo.png" alt="RevelaCode logo" /><span>RevelaCode</span></div>
+                <div className="rc-gateway-brand-actions">
+                  <button type="button" onClick={toggleModalTheme} aria-label={modalDark ? "Switch to light theme" : "Switch to dark theme"} title={modalDark ? "Light theme" : "Dark theme"} className="rc-gateway-icon-button">{modalDark ? <Sun size={17} /> : <Moon size={17} />}</button>
+                  <button type="button" onClick={handleClose} className="rc-gateway-icon-button" aria-label="Close account access" title="Close"><X size={18} /></button>
                 </div>
               </div>
-
-              <h2 className="pr-2 text-[clamp(27px,7vw,32px)] font-extrabold leading-[1.12] tracking-[-0.03em]">
-                Your account.<br />
-                <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">Your ecosystem.</span>
-              </h2>
-              <p className="mt-2.5 max-w-[340px] text-[13.5px] leading-6 text-[#a9bdb6]">
-                One secure identity for Bible, study, business, farming, education, marketplace and community.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {["Biashara", "Shamba", "Elimu", "Jumuiya"].map((name) => (
-                  <span key={name} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-emerald-100">
-                    <span className="h-[5px] w-[5px] rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-                    {name}
-                  </span>
-                ))}
+              <div className="rc-gateway-brand-copy">
+                <div className="rc-gateway-eyebrow"><span className="rc-gateway-eyebrow-dot" />ONE IDENTITY. MANY POSSIBILITIES.</div>
+                <h1 id="rc-identity-heading">Your account.<span>Your ecosystem.</span></h1>
+                <p>One secure identity for learning, faith, business, farming and community. Move across the RevelaCode ecosystem without starting over.</p>
               </div>
+              <div className="rc-gateway-services" aria-label="Connected RevelaCode services">
+                <div className="rc-gateway-service"><span>BI</span><strong>Biashara</strong></div>
+                <div className="rc-gateway-service"><span>SH</span><strong>Shamba</strong></div>
+                <div className="rc-gateway-service"><span>EL</span><strong>Elimu</strong></div>
+                <div className="rc-gateway-service"><span>JU</span><strong>Jumuiya</strong></div>
+                <div className="rc-gateway-service"><span>FA</span><strong>Faith</strong></div>
+                <div className="rc-gateway-service"><span>ST</span><strong>Study</strong></div>
+              </div>
+              <div className="rc-gateway-orbit" aria-hidden="true">
+                <svg viewBox="0 0 420 174" role="presentation">
+                  <ellipse cx="210" cy="87" rx="174" ry="58" /><ellipse cx="210" cy="87" rx="118" ry="76" transform="rotate(-24 210 87)" />
+                  <path d="M42 88 C104 18 313 18 378 88" /><path d="M42 88 C104 156 313 156 378 88" /><path d="M94 42 L326 132 M92 132 L328 42" />
+                  <circle cx="210" cy="87" r="36" className="rc-gateway-orbit-core" /><circle cx="40" cy="88" r="5" /><circle cx="378" cy="88" r="5" /><circle cx="112" cy="25" r="4" /><circle cx="308" cy="149" r="4" /><circle cx="326" cy="42" r="4" /><circle cx="94" cy="132" r="4" />
+                </svg>
+                <div className="rc-gateway-orbit-center"><Sparkles size={20} /></div>
+                <span className="rc-gateway-orbit-label rc-gateway-orbit-label-one">LEARN</span><span className="rc-gateway-orbit-label rc-gateway-orbit-label-two">BUILD</span><span className="rc-gateway-orbit-label rc-gateway-orbit-label-three">CONNECT</span>
+              </div>
+              <div className="rc-gateway-demo">
+                <div className="rc-gateway-demo-copy"><strong>New to RevelaCode?</strong><span>Take a guided tour of the ecosystem.</span></div>
+                <div className="rc-gateway-demo-action"><DemoLauncher compact /></div>
+              </div>
+              <div className="rc-gateway-brand-footer"><ShieldCheck size={15} /><span>One trusted identity across your connected services</span></div>
             </div>
-          </header>
-
-          <div
-            className="
-              min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain
-              px-5 py-5 pb-[calc(20px+env(safe-area-inset-bottom))]
-              sm:px-6 sm:py-6
-            "
-          >
+          </aside>
+          <section className="rc-gateway-auth-panel" aria-label="Account access workspace">
+            <div className="rc-gateway-auth-topbar">
+              <div><span className="rc-gateway-auth-kicker">REVELACODE IDENTITY</span><p>Secure access to your connected workspace</p></div>
+              <div className="rc-gateway-secure-chip"><ShieldCheck size={15} /><span>Secure access</span></div>
+            </div>
+            <div className="rc-gateway-auth-scroll"><div className="rc-gateway-auth-content">
           {/* =================================================
               CONTENT
           ================================================= */}
@@ -1544,301 +1504,22 @@ const completeLogin = (data = {}) => {
             ================================================= */}
 
             {!mode && (
-              <>
-                <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-                  <p className="mb-2 text-sm font-bold text-emerald-950 dark:text-emerald-100">New to RevelaCode? Take a guided tour.</p>
-                  <DemoLauncher compact />
+              <div className="rc-gateway-entry">
+                <div className="rc-gateway-entry-heading"><span className="rc-gateway-section-label">GET STARTED</span><h2>Welcome to RevelaCode</h2><p>Choose how you would like to continue.</p></div>
+                <div className="rc-gateway-entry-actions" role="group" aria-label="Choose an account action">
+                  <button type="button" onClick={() => setMode("login")} className="rc-gateway-entry-action"><span className="rc-gateway-entry-icon"><LockKeyhole size={18} /></span><span className="rc-gateway-entry-copy"><strong>Sign in</strong><small>Access your existing account</small></span><ArrowRight size={17} /></button>
+                  <button type="button" onClick={() => setMode("register")} className="rc-gateway-entry-action"><span className="rc-gateway-entry-icon"><UserPlus size={18} /></span><span className="rc-gateway-entry-copy"><strong>Create account</strong><small>Join the RevelaCode ecosystem</small></span><ArrowRight size={17} /></button>
+                  <button type="button" onClick={() => setMode("forgot")} className="rc-gateway-entry-action"><span className="rc-gateway-entry-icon"><KeyRound size={18} /></span><span className="rc-gateway-entry-copy"><strong>Recover access</strong><small>Reset your password securely</small></span><ArrowRight size={17} /></button>
                 </div>
-                <div
-                  className="
-                    grid
-                    grid-cols-1
-                    gap-3
-                    sm:grid-cols-3
-                  "
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMode("login")
-                    }
-                    className="
-                      group
-                      rounded-2xl
-                      border
-                      border-emerald-200
-                      bg-emerald-50
-                      p-4
-                      text-left
-                      transition
-                      hover:-translate-y-0.5
-                      hover:border-emerald-300
-                      hover:shadow-lg
-                      dark:border-emerald-900/50
-                      dark:bg-emerald-950/30
-                    "
-                  >
-                    <div
-                      className="
-                        mb-3
-                        flex
-                        h-10 w-10
-                        items-center
-                        justify-center
-                        rounded-xl
-                        bg-emerald-600
-                        text-white
-                      "
-                    >
-                      <LockKeyhole
-                        size={19}
-                      />
-                    </div>
-
-                    <div className="font-semibold">
-                      Login
-                    </div>
-
-                    <div
-                      className="
-                        mt-1
-                        text-xs
-                        text-slate-500
-                        dark:text-slate-400
-                      "
-                    >
-                      Access your account
-                    </div>
-
-                    <ArrowRight
-                      size={16}
-                      className="
-                        mt-3
-                        transition
-                        group-hover:translate-x-1
-                      "
-                    />
-                  </button>
-
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMode("register")
-                    }
-                    className="
-                      group
-                      rounded-2xl
-                      border
-                      border-slate-200
-                      p-4
-                      text-left
-                      transition
-                      hover:-translate-y-0.5
-                      hover:shadow-lg
-                      dark:border-white/10
-                    "
-                  >
-                    <div
-                      className="
-                        mb-3
-                        flex
-                        h-10 w-10
-                        items-center
-                        justify-center
-                        rounded-xl
-                        bg-slate-900
-                        text-white
-                        dark:bg-white
-                        dark:text-slate-900
-                      "
-                    >
-                      <UserPlus
-                        size={19}
-                      />
-                    </div>
-
-                    <div className="font-semibold">
-                      Create account
-                    </div>
-
-                    <div
-                      className="
-                        mt-1
-                        text-xs
-                        text-slate-500
-                        dark:text-slate-400
-                      "
-                    >
-                      Join RevelaCode
-                    </div>
-
-                    <ArrowRight
-                      size={16}
-                      className="
-                        mt-3
-                        transition
-                        group-hover:translate-x-1
-                      "
-                    />
-                  </button>
-
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMode("forgot")
-                    }
-                    className="
-                      group
-                      rounded-2xl
-                      border
-                      border-slate-200
-                      p-4
-                      text-left
-                      transition
-                      hover:-translate-y-0.5
-                      hover:shadow-lg
-                      dark:border-white/10
-                    "
-                  >
-                    <div
-                      className="
-                        mb-3
-                        flex
-                        h-10 w-10
-                        items-center
-                        justify-center
-                        rounded-xl
-                        bg-slate-100
-                        text-slate-900
-                        dark:bg-white/10
-                        dark:text-white
-                      "
-                    >
-                      <KeyRound
-                        size={19}
-                      />
-                    </div>
-
-                    <div className="font-semibold">
-                      Recover
-                    </div>
-
-                    <div
-                      className="
-                        mt-1
-                        text-xs
-                        text-slate-500
-                        dark:text-slate-400
-                      "
-                    >
-                      Reset your password
-                    </div>
-
-                    <ArrowRight
-                      size={16}
-                      className="
-                        mt-3
-                        transition
-                        group-hover:translate-x-1
-                      "
-                    />
-                  </button>
-                </div>
-
-
-                {/* Guest */}
-
-                <button
-                  type="button"
-                  onClick={
-                    handleGuestLogin
-                  }
-                  data-demo="welcome-guest"
-                  className="
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    px-4
-                    py-3.5
-                    transition
-                    hover:bg-slate-50
-                    dark:border-white/10
-                    dark:hover:bg-white/5
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-3
-                    "
-                  >
-                    <div
-                      className="
-                        flex
-                        h-9 w-9
-                        items-center
-                        justify-center
-                        rounded-xl
-                        bg-slate-100
-                        dark:bg-white/10
-                      "
-                    >
-                      <Users
-                        size={17}
-                      />
-                    </div>
-
-                    <div className="text-left">
-                      <div className="font-medium">
-                        Continue as guest
-                      </div>
-
-                      <div
-                        className="
-                          text-xs
-                          text-slate-500
-                          dark:text-slate-400
-                        "
-                      >
-                        Explore without an account
-                      </div>
-                    </div>
-                  </div>
-
-                  <ArrowRight
-                    size={17}
-                  />
-                </button>
-              </>
+                <button type="button" onClick={handleGuestLogin} data-demo="welcome-guest" className="rc-gateway-guest-action"><span className="rc-gateway-guest-copy"><Users size={18} /><span><strong>Continue as guest</strong><small>Explore available services without an account</small></span></span><ArrowRight size={17} /></button>
+              </div>
             )}
 
-
-            {mode && step === "form" && (mode === "login" || mode === "register") && (
-              <div className={`relative grid grid-cols-2 rounded-2xl bg-slate-100 p-1 dark:bg-white/[0.05] ${mode === "register" ? "is-register" : ""}`}>
-                <div className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.12)] transition-transform duration-300 dark:bg-white/10 ${mode === "register" ? "translate-x-full" : ""}`} />
-                <button
-                  type="button"
-                  onClick={() => { setMode("login"); setStep("form"); setError(""); setMessage(""); }}
-                  aria-pressed={mode === "login"}
-                  className={`relative z-10 h-11 rounded-xl text-sm font-semibold transition ${mode === "login" ? "text-slate-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
-                >
-                  Sign in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setMode("register"); setStep("form"); setError(""); setMessage(""); }}
-                  aria-pressed={mode === "register"}
-                  className={`relative z-10 h-11 rounded-xl text-sm font-semibold transition ${mode === "register" ? "text-slate-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
-                >
-                  Create account
-                </button>
+            {mode && step === "form" && (
+              <div className="rc-gateway-tabs" role="tablist" aria-label="Account access options">
+                <button type="button" role="tab" aria-selected={mode === "login"} onClick={() => { setMode("login"); setStep("form"); setError(""); setMessage(""); }} className={`rc-gateway-tab ${mode === "login" ? "is-active" : ""}`}><LockKeyhole size={15} /><span>Sign in</span></button>
+                <button type="button" role="tab" aria-selected={mode === "register"} onClick={() => { setMode("register"); setStep("form"); setError(""); setMessage(""); }} className={`rc-gateway-tab ${mode === "register" ? "is-active" : ""}`}><UserPlus size={15} /><span>Join</span></button>
+                <button type="button" role="tab" aria-selected={mode === "forgot"} onClick={() => { setMode("forgot"); setStep("form"); setError(""); setMessage(""); }} className={`rc-gateway-tab ${mode === "forgot" ? "is-active" : ""}`}><KeyRound size={15} /><span>Recover</span></button>
               </div>
             )}
 
@@ -2815,6 +2496,7 @@ const completeLogin = (data = {}) => {
 
             {error && (
               <div
+                role="alert"
                 className="
                   flex
                   items-start
@@ -2846,6 +2528,8 @@ const completeLogin = (data = {}) => {
 
             {message && (
               <div
+                role="status"
+                aria-live="polite"
                 className="
                   flex
                   items-start
@@ -2937,9 +2621,11 @@ const completeLogin = (data = {}) => {
                 Terms & Privacy Policy
               </button>
             </div>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
-      </div>
 
 
       {/* =======================================================
