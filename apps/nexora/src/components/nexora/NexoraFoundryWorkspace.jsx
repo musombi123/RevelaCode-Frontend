@@ -573,7 +573,7 @@ export default function NexoraFoundryWorkspace() {
         state: recovered.length ? "recovery_available" : "local_setup_required",
         label: recovered.length
           ? "Local Agent offline · browser recovery copies available"
-          : "Connect your computer in Device Lab to load projects and start production",
+          : "Managed server toolchain is separate; server-backed project storage/execution is not enabled yet",
       });
       return undefined;
     }
@@ -1908,7 +1908,7 @@ export default function NexoraFoundryWorkspace() {
       onDateRangeChange={setOverviewRange}
     >
       {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Sign in to your NEXORA account to retrieve saved projects. Browser-only drafts remain available in this browser.</div>}
-      {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting NEXORA Studio to the paired computer workspace…</div>}
+      {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">{localAgentConnected ? "Connecting to your optional paired-computer project workspace…" : "Your account is signed in. The managed server toolchain is separate from this PC; server-backed project storage and remote job execution are not enabled in this phase. Browser-only drafts remain available here."}</div>}
       {notice&&<div role="status" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
       {activeProject?._recoveryConflict && <section role="alert" className="mb-3 rounded-xl border border-amber-700/60 bg-amber-950/20 p-3 text-xs text-amber-100">
         <div className="font-black">PROJECT VERSION CONFLICT · RECOVERY COPY PRESERVED</div>
