@@ -7,10 +7,10 @@ import {
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 const CORE_TOOLS = [
   ["blender", "Blender"], ["godot", "Godot 4"], ["ffmpeg", "FFmpeg"],
-  ["ffprobe", "FFprobe"], ["java", "Java 17"],
+  ["ffprobe", "FFprobe"],
 ];
 const ANDROID_TOOLS = [
-  ["adb", "ADB"], ["android_sdk", "Android SDK"], ["android_apk_inspector", "APK inspector"],
+  ["java", "Java 17"], ["adb", "ADB"], ["android_sdk", "Android SDK"], ["android_apk_inspector", "APK inspector"],
 ];
 const WORKLOADS = [
   ["workspace_editing", "Workspace editing"],
