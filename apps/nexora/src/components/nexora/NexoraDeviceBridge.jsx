@@ -11,7 +11,9 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   const [token, setToken] = useState("");
   const [agentReachable, setAgentReachable] = useState(false);
   const [agentChecking, setAgentChecking] = useState(true);
-  const [status, setStatus] = useState("Checking whether the Local Agent is running on this computer…");
+  const [loopbackPermission, setLoopbackPermission] = useState("checking");
+  const [status, setStatus] = useState("Checking browser permission for the local companion…");
+  const [installerRelease, setInstallerRelease] = useState({ state: "checking", url: "" });
   const [devices, setDevices] = useState([]);
   const [serial, setSerial] = useState("");
   const [apk, setApk] = useState(null);
@@ -33,7 +35,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     const headers = new Headers(options.headers || {});
     const activeToken = explicitToken || token;
     if (auth && activeToken) headers.set("Authorization", `Bearer ${activeToken}`);
-    const response = await fetch(`${API}${path}`, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store" });
+    const response = await fetch(`${API}${path}`, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store", targetAddressSpace: "loopback" });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const detail = payload?.detail;
@@ -105,6 +107,37 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
 
   useEffect(() => { void refreshManagedCapabilities(); }, [refreshManagedCapabilities]);
 
+  const checkInstallerRelease = useCallback(async () => {
+    setInstallerRelease({ state: "checking", url: "" });
+    try {
+      const response = await fetch("https://api.github.com/repos/musombi123/Procedural-Game-Foundry/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" },
+        credentials: "omit",
+        cache: "no-cache",
+      });
+      if (response.status === 404) {
+        setInstallerRelease({ state: "not_published", url: "" });
+        return;
+      }
+      if (!response.ok) throw new Error("Could not check the NEXORA installer release.");
+      const release = await response.json();
+      const asset = Array.isArray(release?.assets)
+        ? release.assets.find((item) => item?.name === "NEXORA-Local-Agent-Setup.exe" && item?.browser_download_url)
+        : null;
+      setInstallerRelease(asset
+        ? { state: "available", url: asset.browser_download_url }
+        : { state: "not_published", url: "" });
+    } catch {
+      setInstallerRelease({ state: "error", url: "" });
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkInstallerRelease();
+  }, [checkInstallerRelease]);
+
+
+
   const setHardwareMetricsConsent = async (enabled) => {
     setShareHardwareMetrics(enabled);
     if (!enabled) {
@@ -156,6 +189,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         mode: "cors",
         credentials: "omit",
         cache: "no-store",
+        targetAddressSpace: "loopback",
       });
       if (!response.ok) {
         throw new Error(`Local Agent health check failed (HTTP ${response.status}).`);
@@ -165,6 +199,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         throw new Error("The NEXORA Local Agent is running but is not ready yet.");
       }
       setAgentReachable(true);
+      setLoopbackPermission("granted");
       const storedToken = sessionStorage.getItem("nexora.local-agent.token");
       if (storedToken) {
         setToken(storedToken);
@@ -173,9 +208,23 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         setStatus("Local Agent detected. Approve this computer to connect.");
       }
       return true;
-    } catch {
+    } catch (error) {
       setAgentReachable(false);
-      setStatus("Cannot reach 127.0.0.1:8765. The NEXORA Local Agent is not running on this computer.");
+      let permissionState = "prompt";
+      try {
+        if (navigator.permissions?.query) {
+          const permission = await navigator.permissions.query({ name: "loopback-network" });
+          permissionState = permission.state;
+          setLoopbackPermission(permissionState);
+        }
+      } catch {
+        // Older browsers may not expose the granular Loopback Network permission.
+      }
+      setStatus(permissionState === "denied"
+        ? "Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings, then try again."
+        : error?.name === "NotAllowedError"
+          ? "Allow NEXORA to access this computer in the browser permission prompt, then try again."
+          : "Cannot reach 127.0.0.1:8765. Check that the Local Agent installer has completed and the companion is running.");
       onConnectionChange(false);
       return false;
     } finally {
@@ -184,14 +233,64 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   }, [onConnectionChange]);
 
   useEffect(() => {
-    // Probe immediately, then use a bounded low-frequency discovery window.
-    // This lets the browser detect the agent as soon as the installer starts it,
-    // without repeatedly calling /pair or retrying failed production requests.
-    void checkAgent();
+    let cancelled = false;
+    let permissionStatus = null;
+    const handlePermissionChange = () => {
+      if (cancelled || !permissionStatus) return;
+      const next = permissionStatus.state;
+      setLoopbackPermission(next);
+      if (next === "denied") {
+        setAgentReachable(false);
+        setStatus("Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings.");
+      } else if (next === "granted") {
+        setStatus("Browser permission granted. Detecting the NEXORA Local Agent…");
+        void checkAgent();
+      }
+    };
+
+    const inspectPermission = async () => {
+      if (!navigator.permissions?.query) {
+        setLoopbackPermission("prompt");
+        setAgentChecking(false);
+        setStatus("Select Check again to let your browser ask permission to connect to this PC.");
+        return;
+      }
+      try {
+        permissionStatus = await navigator.permissions.query({ name: "loopback-network" });
+        if (cancelled) return;
+        setLoopbackPermission(permissionStatus.state);
+        permissionStatus.addEventListener?.("change", handlePermissionChange);
+        if (permissionStatus.state === "granted") {
+          // Previously approved browsers can discover the companion automatically.
+          void checkAgent();
+        } else if (permissionStatus.state === "denied") {
+          setAgentChecking(false);
+          setStatus("Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings.");
+        } else {
+          // Do not trigger Chrome's local-network permission prompt on page load.
+          // The first loopback request must come from the user's Check again click.
+          setAgentChecking(false);
+          setStatus("Select Check again to let your browser ask permission to connect to this PC.");
+        }
+      } catch {
+        // Older browsers can still grant access from the user-initiated check button.
+        if (!cancelled) {
+          setLoopbackPermission("prompt");
+          setAgentChecking(false);
+          setStatus("Select Check again. Your browser may ask you to allow NEXORA to access this PC.");
+        }
+      }
+    };
+
+    void inspectPermission();
+    return () => {
+      cancelled = true;
+      permissionStatus?.removeEventListener?.("change", handlePermissionChange);
+    };
   }, [checkAgent]);
 
   useEffect(() => {
-    if (agentReachable) return undefined;
+    if (agentReachable || loopbackPermission !== "granted") return undefined;
     let attempts = 0;
     let timer = null;
     let cancelled = false;
@@ -213,7 +312,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       cancelled = true;
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [agentReachable, checkAgent]);
+  }, [agentReachable, loopbackPermission, checkAgent]);
 
   const pair = async () => {
     if (!agentReachable) {
@@ -353,14 +452,31 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       <button type="button" className={button} disabled={!token} onClick={async()=>{try{await request("/disconnect",{method:"POST"});}catch{}sessionStorage.removeItem("nexora.local-agent.token");setToken("");setDevices([]);setSerial("");setCapabilities(null);setPreflight(null);onConnectionChange(false);setStatus("Local agent disconnected");}}>Disconnect</button>
     </div>
     <p className={"mt-2 text-[11px] " + (agentReachable ? "text-emerald-500" : "text-amber-500")} role="status">{status}</p>
-    {!agentReachable && <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-slate-800 dark:border-amber-800/70 dark:bg-amber-950/20 dark:text-amber-100">
+    {!agentReachable && loopbackPermission === "prompt" && <div className="mt-4 rounded-xl border border-cyan-300 bg-cyan-50 p-3 text-slate-800 dark:border-cyan-800/70 dark:bg-cyan-950/20 dark:text-cyan-100" role="status">
+      <h4 className="text-xs font-black">ALLOW BROWSER ACCESS TO THIS PC</h4>
+      <p className="mt-1 text-[11px] leading-5">Chrome protects websites from silently accessing your computer. Select <b>Check again</b> and allow <b>Loopback Network</b> access for revelacode.co.ke if asked. Then NEXORA can detect the local companion.</p>
+      {installerRelease.state === "available" && <a href={installerRelease.url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg bg-violet-700 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> Download Windows Installer</a>}
+      {installerRelease.state !== "available" && <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-slate-600 dark:text-cyan-100">{installerRelease.state === "checking" ? "Checking for the signed Windows installer…" : installerRelease.state === "not_published" ? "The signed Windows installer is not published yet." : "Installer availability could not be checked."}</span>
+        <button type="button" className={button} disabled={installerRelease.state === "checking"} onClick={checkInstallerRelease}><RefreshCw size={12}/> Check release</button>
+      </div>}
+    </div>}
+    {!agentReachable && loopbackPermission === "denied" && <div className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-3 text-slate-800 dark:border-rose-800/70 dark:bg-rose-950/20 dark:text-rose-100" role="alert">
+      <h4 className="text-xs font-black">BROWSER BLOCKED LOCAL CONNECTION</h4>
+      <p className="mt-1 text-[11px] leading-5">Open the site controls beside the address bar, enter Site settings, set <b>Local network</b> or <b>Loopback network</b> to Allow for revelacode.co.ke, return here and select Check again.</p>
+    </div>}
+    {!agentReachable && loopbackPermission === "granted" && <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-slate-800 dark:border-amber-800/70 dark:bg-amber-950/20 dark:text-amber-100">
       <div className="flex items-start gap-2">
         <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
         <div className="min-w-0">
           <h4 className="text-xs font-black">THE LOCAL AGENT IS NOT RUNNING</h4>
-          <p className="mt-1 text-[11px] leading-5">NEXORA needs its small Local Agent companion running on this PC for local builds and hardware access. It is not a cloud connection.</p>
+          <p className="mt-1 text-[11px] leading-5">Browser permission is available, but NEXORA cannot reach the companion on port 8765. Install the local companion once; NEXORA will detect it automatically after setup starts it.</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <a href="https://github.com/musombi123/Procedural-Game-Foundry/releases/latest/download/NEXORA-Local-Agent-Setup.exe" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-violet-700 px-4 py-2 text-[11px] font-bold text-white"><Download size={14}/> Download Windows Installer</a>
+            {installerRelease.state === "available" && <a href={installerRelease.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-violet-700 px-4 py-2 text-[11px] font-bold text-white"><Download size={14}/> Download Windows Installer</a>}
+            {installerRelease.state !== "available" && <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600 dark:text-amber-100">
+              <span>{installerRelease.state === "checking" ? "Checking for the signed Windows installer…" : installerRelease.state === "not_published" ? "The signed Windows installer is not published yet." : "Installer availability could not be checked."}</span>
+              <button type="button" className={button} disabled={installerRelease.state === "checking"} onClick={checkInstallerRelease}><RefreshCw size={12}/> Check release</button>
+            </div>}
             <button type="button" className={button} disabled={agentChecking} onClick={checkAgent}><RefreshCw size={13}/>{agentChecking ? "Checking…" : "Check again"}</button>
           </div>
           <p className="mt-2 text-[10px] leading-5 text-slate-500 dark:text-slate-400">Install once. NEXORA installs the background companion for your Windows account, starts it immediately and starts it automatically when you sign in again. This page checks for it automatically after installation. No Git, Python, terminal or pasted commands are required.</p>

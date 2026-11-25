@@ -240,7 +240,7 @@ test("Device Lab requires explicit consent before sending local resource metrics
 test("Local Agent installation is user-friendly and discovery retries automatically after install", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.ok(bridge.includes("const checkAgent = useCallback"));
-  assert.ok(bridge.includes("releases/latest/download/NEXORA-Local-Agent-Setup.exe"));
+  assert.ok(bridge.includes("api.github.com/repos/musombi123/Procedural-Game-Foundry/releases/latest"));
   assert.ok(bridge.includes("starts it automatically when you sign in again"));
   assert.ok(bridge.includes("No Git, Python, terminal or pasted commands are required"));
   assert.ok(bridge.includes("attempts < 18"));
@@ -250,4 +250,30 @@ test("Local Agent installation is user-friendly and discovery retries automatica
   assert.ok(!bridge.includes("install-nexora-local-agent.ps1"));
   assert.ok(!bridge.includes("Set-ExecutionPolicy"));
   assert.ok(!bridge.includes("git clone"));
+});
+
+
+test("NEXORA gates Local Agent discovery on Chrome Loopback Network permission", async () => {
+  const [bridge, workspace] = await Promise.all([
+    readComponent("NexoraDeviceBridge.jsx"),
+    readComponent("NexoraFoundryWorkspace.jsx"),
+  ]);
+  assert.ok(bridge.includes('navigator.permissions.query({ name: "loopback-network" })'));
+  assert.ok(bridge.includes('if (permissionStatus.state === "granted")'));
+  assert.ok(bridge.includes("Do not trigger Chrome's local-network permission prompt on page load."));
+  assert.ok(bridge.includes('targetAddressSpace: "loopback"'));
+  assert.ok(bridge.includes('loopbackPermission !== "granted"'));
+  assert.ok(bridge.includes("Loopback Network"));
+  assert.equal((workspace.match(/targetAddressSpace: "loopback"/g) || []).length, 3);
+});
+
+
+test("Device Lab only offers the Windows installer after a signed release asset is published", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.ok(bridge.includes("releases/latest"));
+  assert.ok(bridge.includes('item?.name === "NEXORA-Local-Agent-Setup.exe"'));
+  assert.ok(bridge.includes('state: "not_published"'));
+  assert.ok(bridge.includes('installerRelease.state === "available" && <a href={installerRelease.url}'));
+  assert.ok(bridge.includes("The signed Windows installer is not published yet."));
+  assert.ok(bridge.includes("Check release"));
 });
