@@ -79,7 +79,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     }
   }, [accountAccessToken, cloudRequest]);
 
-  const requestManagedPlan = useCallback(async (systemProfile, selectedWorkload = workloadProfile, consent = false) => {
+  const requestManagedPlan = useCallback(async (systemProfile, selectedWorkload = "procedural_3d", consent = false) => {
     if (!accountAccessToken) return null;
     const metricsShared = consent === true && Boolean(systemProfile);
     setManagedBusy(true);
@@ -102,20 +102,17 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     } finally {
       setManagedBusy(false);
     }
-  }, [accountAccessToken, cloudRequest, workloadProfile]);
+  }, [accountAccessToken, cloudRequest]);
+
+  useEffect(() => { void refreshManagedCapabilities(); }, [refreshManagedCapabilities]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const result = await refreshManagedCapabilities();
-      if (!cancelled && result?.available) {
-        // The default placement check sends no local device data. The managed
-        // server is selected only when its own toolchain and capacity pass.
-        await requestManagedPlan(null, workloadProfile, false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [refreshManagedCapabilities, requestManagedPlan, workloadProfile]);
+    if (managedCapabilities?.available && !shareHardwareMetrics) {
+      // The default placement check sends no local device data. The managed
+      // server is selected only when its own toolchain and capacity pass.
+      void requestManagedPlan(null, workloadProfile, false);
+    }
+  }, [managedCapabilities?.available, shareHardwareMetrics, workloadProfile, requestManagedPlan]);
 
   const setHardwareMetricsConsent = async (enabled) => {
     setShareHardwareMetrics(enabled);
