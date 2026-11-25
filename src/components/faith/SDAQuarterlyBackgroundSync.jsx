@@ -1,11 +1,8 @@
 import { useEffect } from "react";
 import { readCachedApiResponse, writeCachedApiResponse } from "@/services/offlineHubSync.js";
+import { BACKEND_ORIGIN } from "@/config/serviceOrigins.js";
 
-const API = String(
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_BACKEND_URL ||
-  "https://revelacode-backend.onrender.com"
-).replace(/\/+$/, "");
+const API = BACKEND_ORIGIN;
 
 function currentKenyaQuarter() {
   const parts = new Intl.DateTimeFormat("en-KE", {
