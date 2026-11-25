@@ -122,3 +122,33 @@ test("AI compliance notice loading has a recovery action when the notice API is 
   assert.match(dashboard, /complianceStatus === "error" && \([\s\S]*?Retry loading notices/);
   assert.match(dashboard, /setComplianceRetryKey\(\(current\) => current \+ 1\)/);
 });
+
+
+test("Bible dashboard retains labels for all supported return destinations", () => {
+  const bibleDashboard = read("../src/components/BibleDashboard.jsx");
+  const labelsBlock = bibleDashboard.match(
+    /const dashboardLabels = Object\.freeze\(\{([\s\S]*?)\}\);/,
+  );
+  assert.ok(labelsBlock, "Bible dashboard must define dashboardLabels before using the back-navigation label.");
+  for (const [key, label] of Object.entries({
+    home: "Home",
+    faith: "Faith",
+    education: "Education",
+    shamba: "Shamba",
+    biashara: "Biashara",
+    community: "Community",
+    events: "Events",
+    prophecy: "Prophecy",
+    referential: "Referential",
+    profile: "Profile",
+    settings: "Settings",
+  })) {
+    assert.match(
+      labelsBlock[1],
+      new RegExp("\\b" + key + ":\\s*\\"" + label + "\\""),
+      "Missing Bible return-navigation label: " + key,
+    );
+  }
+  assert.match(bibleDashboard, /dashboardLabels\[previousDashboard\]/);
+  assert.match(bibleDashboard, /\.replace\(\/[ -_]\/g, " "\)/);
+});
