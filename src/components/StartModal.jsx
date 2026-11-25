@@ -34,6 +34,57 @@ import { registerPlugin } from "@capacitor/core";
 const NativeBrowser = registerPlugin("Browser");
 const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 
+function decodeBase64Url(value) {
+  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  const binary = window.atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+function encodeBase64Url(buffer) {
+  if (!buffer) return null;
+  const bytes = buffer instanceof ArrayBuffer
+    ? new Uint8Array(buffer)
+    : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += 1) binary += String.fromCharCode(bytes[index]);
+  return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function toBrowserPublicKeyOptions(source = {}) {
+  const options = { ...source, challenge: decodeBase64Url(source.challenge) };
+  if (source.user?.id) options.user = { ...source.user, id: decodeBase64Url(source.user.id) };
+  for (const key of ["allowCredentials", "excludeCredentials"]) {
+    if (Array.isArray(source[key])) {
+      options[key] = source[key].map((entry) => ({ ...entry, id: decodeBase64Url(entry.id) }));
+    }
+  }
+  return options;
+}
+
+function serialisePublicKeyCredential(credential, ceremony) {
+  const response = credential.response || {};
+  const body = {
+    id: credential.id,
+    rawId: encodeBase64Url(credential.rawId),
+    type: credential.type,
+    authenticatorAttachment: credential.authenticatorAttachment || null,
+    clientExtensionResults: credential.getClientExtensionResults?.() || {},
+    response: { clientDataJSON: encodeBase64Url(response.clientDataJSON) },
+  };
+  if (ceremony === "registration") {
+    body.response.attestationObject = encodeBase64Url(response.attestationObject);
+    body.response.transports = response.getTransports?.() || [];
+  } else {
+    body.response.authenticatorData = encodeBase64Url(response.authenticatorData);
+    body.response.signature = encodeBase64Url(response.signature);
+    body.response.userHandle = encodeBase64Url(response.userHandle);
+  }
+  return body;
+}
+
 
 export default function StartModal({ onComplete }) {
   const {
@@ -68,6 +119,22 @@ export default function StartModal({ onComplete }) {
   // This honours all supported Vite API aliases and the production fallback.
   const baseUrl = resolveBackendBaseUrl(import.meta.env || {});
 
+  useEffect(() => {
+    let active = true;
+    if (!baseUrl) return undefined;
+    fetch(String(baseUrl).replace(/\/+$/, "") + "/api/identity/providers", {
+      headers: { Accept: "application/json" },
+    })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (active && payload?.success && payload.providers) setIdentityProviders(payload.providers);
+      })
+      .catch(() => {
+        if (active) setIdentityProviders({});
+      });
+    return () => { active = false; };
+  }, [baseUrl]);
+
   // =======================================================
   // STATE
   // =======================================================
@@ -76,6 +143,9 @@ export default function StartModal({ onComplete }) {
   // null opens the entry choice (sign in, create an account, or explore as guest)
 
   const [step, setStep] = useState("form");
+  const [identityProviders, setIdentityProviders] = useState({});
+  const [phoneChallengeId, setPhoneChallengeId] = useState("");
+  const [phoneCode, setPhoneCode] = useState("");
 
   useLayoutEffect(() => {
     if (new URLSearchParams(location.search).get("mode") === "register") {
@@ -175,6 +245,8 @@ export default function StartModal({ onComplete }) {
     setConfirmPassword("");
 
     setVerificationCode("");
+    setPhoneChallengeId("");
+    setPhoneCode("");
     setMfaChallengeToken("");
     setMfaCode("");
     setMfaSetupData(null);
@@ -348,32 +420,31 @@ export default function StartModal({ onComplete }) {
     );
 
 
-  const handleGoogleSignIn = async () => {
+  const handleProviderSignIn = async (provider) => {
     if (!baseUrl) {
       setError("The backend URL is not configured.");
       return;
     }
-
+    if (!["google", "microsoft", "github"].includes(provider)) return;
     const isNativeAndroid = Boolean(window.Capacitor?.isNativePlatform?.());
-    const authorizationUrl = new URL(`${baseUrl}/api/oauth/google/start`);
+    const authorizationUrl = new URL(
+      String(baseUrl).replace(/\/+$/, "") + "/api/oauth/" + provider + "/start"
+    );
     authorizationUrl.searchParams.set("mode", "login");
     authorizationUrl.searchParams.set("client", isNativeAndroid ? "android" : "web");
-
     if (isNativeAndroid) {
       try {
-        await NativeBrowser.open({
-          url: authorizationUrl.toString(),
-          toolbarColor: "#08111F",
-        });
+        await NativeBrowser.open({ url: authorizationUrl.toString(), toolbarColor: "#08111F" });
       } catch (error) {
-        console.error("Could not open the Android system browser for Google sign-in.", error);
-        setError(error?.message || "Google sign-in could not open the Android browser. Please try again.");
+        console.error("Could not open the Android system browser for " + provider + " sign-in.", error);
+        setError(error?.message || "The system browser could not open. Please try again.");
       }
       return;
     }
-
     window.location.assign(authorizationUrl.toString());
   };
+
+  const handleGoogleSignIn = () => handleProviderSignIn("google");
 
   const requestVerificationCode = () =>
     apiPost(
