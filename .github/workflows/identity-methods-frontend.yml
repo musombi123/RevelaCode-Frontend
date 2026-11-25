@@ -1,0 +1,47 @@
+name: Identity methods frontend checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/components/StartModal.jsx"
+      - "src/components/AccountDashboard.jsx"
+      - "src/pages/OAuthCallbackPage.jsx"
+      - "src/App.jsx"
+      - "tests/identity-methods.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/identity-methods-frontend.yml"
+  push:
+    branches:
+      - feat/revelacode-identity-gateway-20261125
+    paths:
+      - "src/components/StartModal.jsx"
+      - "src/components/AccountDashboard.jsx"
+      - "src/pages/OAuthCallbackPage.jsx"
+      - "src/App.jsx"
+      - "tests/identity-methods.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/identity-methods-frontend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  identity-methods-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Run authentication and identity regression tests
+        run: npm run test:auth
+      - name: Build production web applications
+        run: npm run build:web
