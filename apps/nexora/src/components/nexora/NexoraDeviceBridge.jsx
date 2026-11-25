@@ -7,7 +7,6 @@ const button = "inline-flex min-h-9 items-center justify-center gap-2 rounded-xl
 const primary = "inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50";
 
 export default function NexoraDeviceBridge({ packageId = "com.nexora.game", accountAccessToken = "", expectedAccountUserId = "", onConnectionChange = () => {} }) {
-  const [pairCode, setPairCode] = useState("");
   const [token, setToken] = useState("");
   const [status, setStatus] = useState("Checking local desktop bridge…");
   const [devices, setDevices] = useState([]);
@@ -111,18 +110,22 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       const result = await request("/pair", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: pairCode, account_access_token: accountAccessToken }),
+        body: JSON.stringify({
+          consent: true,
+          account_access_token: accountAccessToken,
+        }),
       }, false);
       sessionStorage.setItem("nexora.local-agent.token", result.access_token);
       setToken(result.access_token);
-      setPairCode("");
       await loadHardware(result.access_token);
       onConnectionChange(true);
-      setStatus("Local compute agent paired · hardware preflight available");
+      setStatus("This computer is connected to NEXORA · local hardware preflight is ready");
     } catch (error) {
       setStatus(error.message);
       onConnectionChange(false);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   useEffect(() => {
@@ -205,7 +208,15 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   return <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
     <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300"><Cable size={18}/></span><div><h3 className="font-black">Desktop Device Bridge</h3><p className="text-xs text-slate-500">Install, launch and inspect your game on a real Android device.</p></div></div><span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Local computer only</span></div>
     <div className="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-5 text-slate-600 dark:bg-slate-900 dark:text-slate-300"><ShieldCheck size={15} className="mt-0.5 shrink-0"/>Generation, video processing, Blender, GPU inference and Godot exports run on this computer. The local agent binds to 127.0.0.1 only. Hardware details remain local; only the final game build is intended for cloud publishing. Device installation always requires your confirmation.</div>
-    <div className="mt-4 flex flex-wrap items-end gap-2"><label className="min-w-[190px] flex-1 text-xs font-bold text-slate-600 dark:text-slate-300">One-time local pairing code<input className={field} inputMode="numeric" maxLength={8} value={pairCode} onChange={(e)=>setPairCode(e.target.value.replace(/\\D/g,""))} placeholder="8-digit code shown in desktop terminal"/></label><button type="button" className={primary} disabled={busy || pairCode.length !== 8 || Boolean(token) || !accountAccessToken} onClick={pair}>Pair this computer</button><button type="button" className={button} disabled={busy || !token} onClick={refreshDevices}><RefreshCw size={13}/> Refresh hardware & devices</button><button type="button" className={button} disabled={!token} onClick={async()=>{try{await request("/disconnect",{method:"POST"});}catch{}sessionStorage.removeItem("nexora.local-agent.token");setToken("");setDevices([]);setSerial("");setCapabilities(null);setPreflight(null);onConnectionChange(false);setStatus("Local agent disconnected");}}>Disconnect</button></div>
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="min-w-[220px] flex-1 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="text-[10px] font-black tracking-wide text-slate-700 dark:text-slate-200">CONNECT THIS COMPUTER</div>
+        <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Choose Allow & connect to authorize this signed-in NEXORA account to run jobs you start on this PC. No pairing code or terminal entry is required.</p>
+      </div>
+      <button type="button" className={primary} disabled={busy || Boolean(token) || !accountAccessToken} onClick={pair}><ShieldCheck size={14}/>{busy ? "Connecting…" : "Allow & connect this computer"}</button>
+      <button type="button" className={button} disabled={busy || !token} onClick={refreshDevices}><RefreshCw size={13}/> Refresh hardware & devices</button>
+      <button type="button" className={button} disabled={!token} onClick={async()=>{try{await request("/disconnect",{method:"POST"});}catch{}sessionStorage.removeItem("nexora.local-agent.token");setToken("");setDevices([]);setSerial("");setCapabilities(null);setPreflight(null);onConnectionChange(false);setStatus("Local agent disconnected");}}>Disconnect</button>
+    </div>
     <p className="mt-2 text-[11px] text-slate-500">{status}</p>
     {token && <div className="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-3">
