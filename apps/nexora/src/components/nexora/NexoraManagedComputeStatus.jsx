@@ -78,6 +78,6 @@ export default function NexoraManagedComputeStatus({ accountAccessToken = "" }) 
     {status && <p className={"mt-1 text-[10px] leading-5 " + (status.workspace_storage?.ready ? "text-emerald-300" : "text-amber-300")}>
       {status.workspace_storage?.ready ? "Persistent workspace volume is mounted and writable." : status.workspace_storage?.note || "Persistent workspace volume has not been verified."}
     </p>}
-    <p className="mt-2 text-[9px] leading-5 text-slate-500"><ShieldCheck size={11} className="mr-1 inline"/>The server toolchain is independent of your PC's installed software. This phase checks tools and resource capacity; secure project transfer and remote job execution are still disabled. Physical-phone USB/Wi-Fi testing uses the optional paired device bridge.</p>
+    <p className="mt-2 text-[9px] leading-5 text-slate-500"><ShieldCheck size={11} className="mr-1 inline"/>The server toolchain is independent of your PC's installed software. Managed remote job execution is activated separately only after secure project transfer, queueing and artifact storage are enabled. Physical-phone USB/Wi-Fi testing uses the optional paired device bridge.</p>
   </section>;
 }
