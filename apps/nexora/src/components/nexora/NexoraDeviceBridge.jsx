@@ -31,7 +31,9 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const detail = payload?.detail;
-      throw new Error(typeof detail === "string" ? detail : detail?.message || `NEXORA Local Agent request failed (HTTP ${response.status}).`);
+      const error = new Error(typeof detail === "string" ? detail : detail?.message || `NEXORA Local Agent request failed (HTTP ${response.status}).`);
+      error.status = response.status;
+      throw error;
     }
     return payload;
   }, [token]);
@@ -147,12 +149,16 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     let cancelled = false;
     refreshDevices().catch((error) => {
       if (cancelled) return;
-      sessionStorage.removeItem("nexora.local-agent.token");
-      setToken("");
+      // A missing ADB installation or a temporary device-service failure does
+      // not invalidate the account pairing. Only clear a rejected/expired token.
+      if (error.status === 401 || /paired to a different NEXORA account/i.test(error.message || "")) {
+        sessionStorage.removeItem("nexora.local-agent.token");
+        setToken("");
+      }
       setCapabilities(null);
       setPreflight(null);
       onConnectionChange(false);
-      setStatus(error.message || "The saved Local Agent pairing could not be restored. Connect again.");
+      setStatus(error.message || "The Local Agent is reachable, but hardware discovery failed.");
     });
     return () => { cancelled = true; };
   }, [token, agentReachable, refreshDevices, onConnectionChange]);
