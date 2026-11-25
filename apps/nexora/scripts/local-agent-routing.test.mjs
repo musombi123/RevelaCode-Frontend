@@ -216,41 +216,55 @@ test("Local Agent pairing is code-free and requires a signed-in user's explicit 
 
 
 
-test("Asset Library displays the server-installed toolchain and persistent workspace readiness", async () => {
-  const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
+test("Build & Test is the single production entry and Connected Devices remains separate", async () => {
+  const [workspace, center, shell] = await Promise.all([
+    readComponent("NexoraFoundryWorkspace.jsx"),
+    readComponent("NexoraBuildTestCenter.jsx"),
+    readComponent("NexoraStudioShell.jsx"),
+  ]);
+  assert.match(workspace, /NexoraBuildTestCenter/);
+  assert.equal((workspace.match(/\{studioView === "build"/g) || []).length, 1);
+  assert.doesNotMatch(workspace, /NexoraManagedComputeStatus accountAccessToken/);
+  assert.match(workspace, /CONNECTED DEVICES/);
+  assert.match(shell, /label: "Connected Devices"/);
+  assert.match(center, /<NexoraManagedComputeStatus/);
+  assert.match(center, /remote project transfer and remote job submission are not enabled yet/i);
+  assert.match(center, /Current project builds and engine jobs run through the paired NEXORA Desktop Agent/);
+});
+
+test("Managed compute readiness and workload placement live in one Build & Test card", async () => {
   const panel = await readComponent("NexoraManagedComputeStatus.jsx");
-  assert.match(workspace, /NexoraManagedComputeStatus accountAccessToken/);
   for (const tool of ["blender", "godot", "ffmpeg", "ffprobe", "java", "adb", "android_sdk"]) {
-    assert.ok(panel.includes('"'+tool+'"'));
+    assert.ok(panel.includes('"' + tool + '"'));
   }
   assert.ok(panel.includes("/api/compute/capabilities"));
-  assert.ok(panel.includes("Managed remote job execution is activated separately"));
-  assert.ok(panel.includes("Persistent workspace volume is mounted and writable."));
+  assert.ok(panel.includes("/api/compute/plan"));
+  assert.ok(panel.includes("workspace_storage?.ready"));
+  assert.ok(panel.includes("job_submission_enabled === true"));
+  assert.ok(panel.includes("consent_to_share_hardware_metrics: metricsShared"));
+  assert.ok(panel.includes("local_profile: metricsShared ? localProfile : {}"));
+  assert.ok(panel.includes("secure project transfer and remote job submission are not enabled"));
+  assert.ok(panel.includes("Placement is advisory only"));
 });
 
-test("Signed-in users get a server-only toolchain check before pairing the local device", async () => {
+test("Connected Devices contains no duplicate managed server panels or cloud placement logic", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
-  assert.ok(bridge.includes("requestManagedPlan(null, workloadProfile, false)"));
-  assert.ok(bridge.includes("The default placement check sends no local device information"));
-  assert.ok(bridge.includes("SERVER-MANAGED PRODUCTION TOOLCHAIN"));
-  assert.ok(bridge.includes("Persistent server workspace volume verified."));
-  assert.ok(bridge.includes("Local device metrics: not shared. Local capacity is treated as unknown."));
-  assert.ok(bridge.includes("No local tool installation or device pairing is required to check server readiness."));
-  assert.ok(bridge.includes('navigator.permissions.query({ name: "loopback-network" })'));
-  assert.ok(bridge.includes("installerRelease.url"));
-  assert.ok(bridge.includes("Secure project transfer and remote job execution are not enabled yet"));
+  assert.doesNotMatch(bridge, /SERVER-MANAGED PRODUCTION TOOLCHAIN/);
+  assert.doesNotMatch(bridge, /requestManagedPlan|shareHardwareMetrics|managedCapabilities/);
+  assert.match(bridge, /navigator\.permissions\.query\(\{ name: "loopback-network" \}\)/);
+  assert.match(bridge, /installerRelease\.url/);
+  assert.match(bridge, /Connection diagnostics/);
+  assert.match(bridge, /The desktop companion is not responding/);
+  assert.match(bridge, /LOCAL COMPUTER CAPACITY/);
+  assert.match(bridge, /Connected Android devices/);
 });
 
-
-test("Device Lab requires explicit consent before sending local resource metrics", async () => {
+test("Local device metrics are not sent from the desktop bridge component", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
-  assert.match(bridge, /shareHardwareMetrics, setShareHardwareMetrics/);
-  assert.match(bridge, /consent_to_share_hardware_metrics: metricsShared/);
-  assert.match(bridge, /local_profile: metricsShared \? systemProfile : \{\}/);
-  assert.match(bridge, /setHardwareMetricsConsent/);
-  assert.match(bridge, /No file paths, device IDs, project files or source media are included/);
-  assert.match(bridge, /job execution are not enabled yet/);
-  assert.doesNotMatch(bridge, /Hardware details remain local; only the final game build/);
+  assert.doesNotMatch(bridge, /consent_to_share_hardware_metrics|local_profile:/);
+  assert.match(bridge, /Local measurements stay on this PC/);
+  assert.match(bridge, /Managed server readiness is shown separately in Build & Test/);
+  assert.match(bridge, /remote project execution is not enabled/i);
 });
 
 test("Local Agent installation is user-friendly and discovery retries automatically after install", async () => {
