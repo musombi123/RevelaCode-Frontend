@@ -1,6 +1,6 @@
-const API_BASE = String(
-  import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com"
-).trim().replace(/\/+$/, "");
+import { REVELAAI_ORIGIN } from "@/config/serviceOrigins.js";
+
+const API_BASE = REVELAAI_ORIGIN;
 
 async function readResponse(response) {
   let payload = {};

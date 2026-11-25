@@ -1,0 +1,20 @@
+# Independent RPSVI static frontend. Does not change the production Render site.
+services:
+  - type: web
+    name: revelacode-rpsvi-frontend
+    runtime: static
+    branch: verification/rpsvi-staging-frontend
+    buildCommand: npm ci && npm run build -- --mode rpsvi-staging
+    staticPublishPath: ./dist
+    autoDeployTrigger: off
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

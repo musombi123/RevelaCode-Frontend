@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Send, Sparkles, X, RefreshCw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { REVELAAI_ORIGIN } from "@/config/serviceOrigins.js";
 
 export default function SdaLessonAIChat({ material, onClose, initialQuestion = "" }) {
   const { authFetch } = useAuth();
@@ -25,7 +26,8 @@ export default function SdaLessonAIChat({ material, onClose, initialQuestion = "
     setAnswer("");
     try {
       if (typeof authFetch !== "function") throw new Error("Sign in to use lesson AI chat.");
-      const response = await authFetch("https://revelaai.onrender.com/ai", {
+      if (!REVELAAI_ORIGIN) throw new Error("RevelaAI is not configured for this build environment.");
+      const response = await authFetch(`${REVELAAI_ORIGIN}/ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({

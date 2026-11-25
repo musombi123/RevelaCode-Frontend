@@ -2,11 +2,9 @@
  * Normalizes the frontend's backend URL and uses the signed-in JWT rather
  * than putting the shared support API key in browser requests.
  */
-const configuredBase =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_REVELACODE_URL ||
-  import.meta.env.VITE_BACKEND_URL ||
-  "https://revelacode-backend.onrender.com";
+import { BACKEND_ORIGIN } from "@/config/serviceOrigins.js";
+
+const configuredBase = BACKEND_ORIGIN;
 
 export const SUPPORT_API_BASE = String(configuredBase)
   .trim()

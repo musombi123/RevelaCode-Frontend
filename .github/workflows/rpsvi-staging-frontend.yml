@@ -1,0 +1,43 @@
+name: RPSVI staging frontend build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".env.rpsvi-staging"
+      - "render.rpsvi-staging.yaml"
+      - "scripts/verify-rpsvi-staging-bundle.mjs"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - ".github/workflows/rpsvi-staging-frontend.yml"
+  push:
+    branches: [verification/rpsvi-staging-frontend]
+    paths:
+      - ".env.rpsvi-staging"
+      - "render.rpsvi-staging.yaml"
+      - "scripts/verify-rpsvi-staging-bundle.mjs"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/rpsvi-staging-frontend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  staging-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Build against isolated staging API origins
+        run: npm run build -- --mode rpsvi-staging
+      - name: Reject production backend and AI origins in the generated bundle
+        run: node scripts/verify-rpsvi-staging-bundle.mjs

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { BACKEND_ORIGIN } from "@/config/serviceOrigins.js";
 import {
   isBrowserOffline,
   offlineScopeForUser,
@@ -7,7 +8,7 @@ import {
   writeCachedApiResponse,
 } from "@/services/offlineHubSync.js";
 
-const DEFAULT_BACKEND_URL = "https://revelacode-backend.onrender.com";
+const DEFAULT_BACKEND_URL = BACKEND_ORIGIN;
 const ENV = import.meta.env || {};
 
 export function resolveRevenueBackendUrl() {

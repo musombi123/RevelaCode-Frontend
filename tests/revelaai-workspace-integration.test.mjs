@@ -13,7 +13,8 @@ const chatWindow = read("../src/components/ChatWindow.jsx");
 const message = read("../src/components/Message.jsx");
 
 test("workspace and Live Vision use the existing single RevelaAI API base", () => {
-  assert.match(client, /const API_BASE = String\(/);
+  assert.match(client, /import \{ REVELAAI_ORIGIN \} from "@\/config\/serviceOrigins\.js"/);
+  assert.match(client, /const API_BASE = REVELAAI_ORIGIN/);
   assert.match(client, /export const REVELAAI_API_BASE = API_BASE/);
   assert.match(client, /export async function executeRevelaAIWorkspace/);
   assert.match(client, /\$\{API_BASE\}\/api\/workspace\/execute/);

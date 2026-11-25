@@ -1,6 +1,7 @@
 ﻿
 import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { BACKEND_ORIGIN } from "@/config/serviceOrigins.js";
 
 // =========================================================
 // REVELACODE ADMIN API
@@ -19,8 +20,7 @@ import { useAuth } from "@/context/AuthContext.jsx";
 // migration before they can be used by browser-based admin pages.
 // =========================================================
 
-const DEFAULT_BACKEND_URL =
-  "https://revelacode-backend.onrender.com";
+const DEFAULT_BACKEND_URL = BACKEND_ORIGIN;
 
 const ENV = import.meta.env || {};
 
