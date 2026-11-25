@@ -224,28 +224,39 @@ test("Asset Library displays the managed server toolchain installed by NEXORA", 
     assert.ok(panel.includes('"'+tool+'"'));
   }
   assert.ok(panel.includes("/api/compute/capabilities"));
-  assert.ok(panel.includes("remote job execution is activated separately"));
+  assert.ok(panel.includes("remote job execution are still disabled"));
+  assert.ok(panel.includes("Persistent workspace volume is mounted and writable."));
+});
+
+test("A signed-in user gets a server-only placement plan without sharing local hardware metrics", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.ok(bridge.includes("requestManagedPlan(null, workloadProfile, false)"));
+  assert.ok(bridge.includes("Server-only preflight"));
+  assert.ok(bridge.includes("SERVER-MANAGED PRODUCTION TOOLCHAIN"));
+  assert.ok(bridge.includes("Local device metrics: not shared. Local capacity is treated as unknown."));
+  assert.ok(bridge.includes("job execution are not enabled yet"));
 });
 
 test("Device Lab requires explicit consent before sending local resource metrics", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.match(bridge, /shareHardwareMetrics, setShareHardwareMetrics/);
-  assert.match(bridge, /consent_to_share_hardware_metrics: true/);
+  assert.match(bridge, /consent_to_share_hardware_metrics: metricsShared/);
+  assert.match(bridge, /local_profile: metricsShared \? systemProfile : \{\}/);
   assert.match(bridge, /setHardwareMetricsConsent/);
   assert.match(bridge, /No file paths, device IDs, project files or source media are included/);
   assert.match(bridge, /job execution are not enabled yet/);
   assert.doesNotMatch(bridge, /Hardware details remain local; only the final game build/);
 });
 
-test("Local Agent installation is user-friendly and discovery retries automatically after install", async () => {
+test("The local device bridge is optional and no end-user installer or terminal command is exposed", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.ok(bridge.includes("const checkAgent = useCallback"));
-  assert.ok(bridge.includes("releases/latest/download/NEXORA-Local-Agent-Setup.exe"));
-  assert.ok(bridge.includes("starts it automatically when you sign in again"));
-  assert.ok(bridge.includes("No Git, Python, terminal or pasted commands are required"));
+  assert.ok(bridge.includes("LOCAL DEVICE BRIDGE NOT CONNECTED · OPTIONAL"));
+  assert.ok(bridge.includes("Server toolchain checks do not require local pairing"));
   assert.ok(bridge.includes("attempts < 18"));
   assert.ok(bridge.includes("window.setTimeout"));
-  assert.ok(bridge.includes("Check again"));
+  assert.ok(!bridge.includes("NEXORA-Local-Agent-Setup.exe"));
+  assert.ok(!bridge.includes("Download Windows Installer"));
   assert.ok(!bridge.includes("Copy PowerShell install command"));
   assert.ok(!bridge.includes("install-nexora-local-agent.ps1"));
   assert.ok(!bridge.includes("Set-ExecutionPolicy"));
