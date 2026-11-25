@@ -18,7 +18,7 @@ const [workspace, shell, overview, css, viteConfig] = await Promise.all([
 
 test("heavy workspace tools are split into lazy-loaded modules", () => {
   for (const moduleName of [
-    "AndroidBuildConsole",
+    "NexoraBuildTestCenter",
     "NexoraDeviceBridge",
     "CreatorFlowPanel",
     "NexoraDesktopFactoryPanel",
