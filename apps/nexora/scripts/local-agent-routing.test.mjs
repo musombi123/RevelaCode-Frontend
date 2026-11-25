@@ -231,7 +231,7 @@ test("Asset Library displays the managed server toolchain installed by NEXORA", 
 test("Signed-in users get a server-only toolchain check before pairing the local device", async () => {
   const bridge = await readComponent("NexoraDeviceBridge.jsx");
   assert.ok(bridge.includes("requestManagedPlan(null, workloadProfile, false)"));
-  assert.ok(bridge.includes("The default check sends no local device information"));
+  assert.ok(bridge.includes("The default placement check sends no local device information"));
   assert.ok(bridge.includes("SERVER-MANAGED PRODUCTION TOOLCHAIN"));
   assert.ok(bridge.includes("Persistent server workspace volume verified."));
   assert.ok(bridge.includes("Local device metrics: not shared. Local capacity is treated as unknown."));
