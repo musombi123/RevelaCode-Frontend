@@ -88,7 +88,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       const result = await cloudRequest("/api/compute/plan", {
         method: "POST",
         body: JSON.stringify({
-          workload: selectedWorkload,
+          workload: selectedWorkload === "editor_2d" ? "workspace_editing" : selectedWorkload,
           local_profile: metricsShared ? systemProfile : {},
           consent_to_share_hardware_metrics: metricsShared,
         }),
