@@ -11,7 +11,9 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   const [token, setToken] = useState("");
   const [agentReachable, setAgentReachable] = useState(false);
   const [agentChecking, setAgentChecking] = useState(true);
-  const [status, setStatus] = useState("Checking whether the Local Agent is running on this computer…");
+  const [loopbackPermission, setLoopbackPermission] = useState("checking");
+  const [status, setStatus] = useState("Checking browser permission for the local companion…");
+  const [installerRelease, setInstallerRelease] = useState({ state: "checking", url: "" });
   const [devices, setDevices] = useState([]);
   const [serial, setSerial] = useState("");
   const [apk, setApk] = useState(null);
@@ -33,7 +35,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     const headers = new Headers(options.headers || {});
     const activeToken = explicitToken || token;
     if (auth && activeToken) headers.set("Authorization", `Bearer ${activeToken}`);
-    const response = await fetch(`${API}${path}`, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store" });
+    const response = await fetch(`${API}${path}`, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store", targetAddressSpace: "loopback" });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const detail = payload?.detail;
@@ -108,25 +110,51 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
 
   useEffect(() => {
     if (managedCapabilities?.available && !shareHardwareMetrics) {
-      // The default placement check sends no local device data. The managed
-      // server is selected only when its own toolchain and capacity pass.
+      // The default placement check sends no local device information. The server
+      // is selected only when its own toolchain and capacity pass preflight.
       void requestManagedPlan(null, workloadProfile, false);
     }
   }, [managedCapabilities?.available, shareHardwareMetrics, workloadProfile, requestManagedPlan]);
 
+  const checkInstallerRelease = useCallback(async () => {
+    setInstallerRelease({ state: "checking", url: "" });
+    try {
+      const response = await fetch("https://api.github.com/repos/musombi123/Procedural-Game-Foundry/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" },
+        credentials: "omit",
+        cache: "no-cache",
+      });
+      if (response.status === 404) {
+        setInstallerRelease({ state: "not_published", url: "" });
+        return;
+      }
+      if (!response.ok) throw new Error("Could not check the NEXORA installer release.");
+      const release = await response.json();
+      const asset = Array.isArray(release?.assets)
+        ? release.assets.find((item) => item?.name === "NEXORA-Local-Agent-Setup.exe" && item?.browser_download_url)
+        : null;
+      setInstallerRelease(asset
+        ? { state: "available", url: asset.browser_download_url }
+        : { state: "not_published", url: "" });
+    } catch {
+      setInstallerRelease({ state: "error", url: "" });
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkInstallerRelease();
+  }, [checkInstallerRelease]);
+
+
+
   const setHardwareMetricsConsent = async (enabled) => {
     setShareHardwareMetrics(enabled);
     if (!enabled) {
-      setManagedError("Local CPU/RAM/tool measurements stay on this computer. No personal-device metrics were sent.");
-      await requestManagedPlan(null, workloadProfile, false);
+      setManagedPlan(null);
+      setManagedError("Local CPU/RAM/tool measurements stay on this PC. No personal-device metrics are sent.");
       return;
     }
-    if (capabilities) {
-      await requestManagedPlan(capabilities, workloadProfile, true);
-    } else {
-      setManagedError("Connect the optional device bridge and refresh hardware to compare local capacity. No local metrics have been sent.");
-      await requestManagedPlan(null, workloadProfile, false);
-    }
+    if (capabilities) await requestManagedPlan(capabilities, workloadProfile, true);
   };
 
   const loadHardware = useCallback(async (authToken = token) => {
@@ -170,6 +198,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         mode: "cors",
         credentials: "omit",
         cache: "no-store",
+        targetAddressSpace: "loopback",
       });
       if (!response.ok) {
         throw new Error(`Local Agent health check failed (HTTP ${response.status}).`);
@@ -179,6 +208,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         throw new Error("The NEXORA Local Agent is running but is not ready yet.");
       }
       setAgentReachable(true);
+      setLoopbackPermission("granted");
       const storedToken = sessionStorage.getItem("nexora.local-agent.token");
       if (storedToken) {
         setToken(storedToken);
@@ -187,9 +217,23 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         setStatus("Local Agent detected. Approve this computer to connect.");
       }
       return true;
-    } catch {
+    } catch (error) {
       setAgentReachable(false);
-      setStatus("Cannot reach 127.0.0.1:8765. The NEXORA Local Agent is not running on this computer.");
+      let permissionState = "prompt";
+      try {
+        if (navigator.permissions?.query) {
+          const permission = await navigator.permissions.query({ name: "loopback-network" });
+          permissionState = permission.state;
+          setLoopbackPermission(permissionState);
+        }
+      } catch {
+        // Older browsers may not expose the granular Loopback Network permission.
+      }
+      setStatus(permissionState === "denied"
+        ? "Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings, then try again."
+        : error?.name === "NotAllowedError"
+          ? "Allow NEXORA to access this computer in the browser permission prompt, then try again."
+          : "Cannot reach 127.0.0.1:8765. Check that the Local Agent installer has completed and the companion is running.");
       onConnectionChange(false);
       return false;
     } finally {
@@ -198,14 +242,64 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   }, [onConnectionChange]);
 
   useEffect(() => {
-    // Probe immediately, then use a bounded low-frequency discovery window.
-    // This lets the browser detect the agent as soon as the installer starts it,
-    // without repeatedly calling /pair or retrying failed production requests.
-    void checkAgent();
+    let cancelled = false;
+    let permissionStatus = null;
+    const handlePermissionChange = () => {
+      if (cancelled || !permissionStatus) return;
+      const next = permissionStatus.state;
+      setLoopbackPermission(next);
+      if (next === "denied") {
+        setAgentReachable(false);
+        setStatus("Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings.");
+      } else if (next === "granted") {
+        setStatus("Browser permission granted. Detecting the NEXORA Local Agent…");
+        void checkAgent();
+      }
+    };
+
+    const inspectPermission = async () => {
+      if (!navigator.permissions?.query) {
+        setLoopbackPermission("prompt");
+        setAgentChecking(false);
+        setStatus("Select Check again to let your browser ask permission to connect to this PC.");
+        return;
+      }
+      try {
+        permissionStatus = await navigator.permissions.query({ name: "loopback-network" });
+        if (cancelled) return;
+        setLoopbackPermission(permissionStatus.state);
+        permissionStatus.addEventListener?.("change", handlePermissionChange);
+        if (permissionStatus.state === "granted") {
+          // Previously approved browsers can discover the companion automatically.
+          void checkAgent();
+        } else if (permissionStatus.state === "denied") {
+          setAgentChecking(false);
+          setStatus("Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings.");
+        } else {
+          // Do not trigger Chrome's local-network permission prompt on page load.
+          // The first loopback request must come from the user's Check again click.
+          setAgentChecking(false);
+          setStatus("Select Check again to let your browser ask permission to connect to this PC.");
+        }
+      } catch {
+        // Older browsers can still grant access from the user-initiated check button.
+        if (!cancelled) {
+          setLoopbackPermission("prompt");
+          setAgentChecking(false);
+          setStatus("Select Check again. Your browser may ask you to allow NEXORA to access this PC.");
+        }
+      }
+    };
+
+    void inspectPermission();
+    return () => {
+      cancelled = true;
+      permissionStatus?.removeEventListener?.("change", handlePermissionChange);
+    };
   }, [checkAgent]);
 
   useEffect(() => {
-    if (agentReachable) return undefined;
+    if (agentReachable || loopbackPermission !== "granted") return undefined;
     let attempts = 0;
     let timer = null;
     let cancelled = false;
@@ -227,7 +321,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       cancelled = true;
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [agentReachable, checkAgent]);
+  }, [agentReachable, loopbackPermission, checkAgent]);
 
   const pair = async () => {
     if (!agentReachable) {
@@ -354,12 +448,12 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   const formatBytes = (value) => value ? `${(Number(value) / (1024 ** 3)).toFixed(1)} GiB` : "Not detected";
 
   return <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300"><Cable size={18}/></span><div><h3 className="font-black">Desktop Device Bridge</h3><p className="text-xs text-slate-500">Optional local acceleration and physical Android-device testing. NEXORA's production toolchain is provisioned on the managed server.</p></div></div><span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Optional device bridge</span></div>
-    <div className="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-5 text-slate-600 dark:bg-slate-900 dark:text-slate-300"><ShieldCheck size={15} className="mt-0.5 shrink-0"/>The managed server supplies Blender, Godot 4, FFmpeg/FFprobe, Java and Android build tools. This optional bridge lets NEXORA measure local CPU/RAM headroom for informed placement and connect a physical Android phone over USB or Wi-Fi. Server toolchain checks do not require local pairing.</div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300"><Cable size={18}/></span><div><h3 className="font-black">Desktop Device Bridge</h3><p className="text-xs text-slate-500">Install, launch and inspect your game on a real Android device.</p></div></div><span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Paired local device</span></div>
+    <div className="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-5 text-slate-600 dark:bg-slate-900 dark:text-slate-300"><ShieldCheck size={15} className="mt-0.5 shrink-0"/>Your PC remains the default for light editing, local project files and physical Android devices. NEXORA checks live CPU/RAM headroom before recommending local production. Larger supported workloads can be planned for the managed server's preinstalled toolchain. This bridge remains loopback-only; Android USB and Wi-Fi installation still use this paired PC.</div>
     <div className="mt-4 flex flex-wrap items-center gap-2">
       <div className="min-w-[220px] flex-1 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-        <div className="text-[10px] font-black tracking-wide text-slate-700 dark:text-slate-200">OPTIONAL · CONNECT THIS COMPUTER</div>
-        <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Connect this PC only when you want to use its local CPU/RAM for eligible work or test a build on a physical Android phone. The managed server toolchain is separate.</p>
+        <div className="text-[10px] font-black tracking-wide text-slate-700 dark:text-slate-200">CONNECT THIS COMPUTER</div>
+        <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Choose Allow & connect to authorize this signed-in NEXORA account to run jobs you start on this PC. No pairing code or terminal entry is required.</p>
       </div>
       <button type="button" className={primary} disabled={busy || !agentReachable || Boolean(token) || !accountAccessToken} onClick={pair}><ShieldCheck size={14}/>{busy ? "Connecting…" : "Allow & connect this computer"}</button>
       <button type="button" className={button} disabled={agentChecking} onClick={checkAgent}><RefreshCw size={13}/>{agentChecking ? "Checking…" : "Check connection"}</button>
@@ -367,35 +461,38 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       <button type="button" className={button} disabled={!token} onClick={async()=>{try{await request("/disconnect",{method:"POST"});}catch{}sessionStorage.removeItem("nexora.local-agent.token");setToken("");setDevices([]);setSerial("");setCapabilities(null);setPreflight(null);onConnectionChange(false);setStatus("Local agent disconnected");}}>Disconnect</button>
     </div>
     <p className={"mt-2 text-[11px] " + (agentReachable ? "text-emerald-500" : "text-amber-500")} role="status">{status}</p>
-    {!agentReachable && <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/60 p-4 text-slate-300">
+    {!agentReachable && loopbackPermission === "prompt" && <div className="mt-4 rounded-xl border border-cyan-300 bg-cyan-50 p-3 text-slate-800 dark:border-cyan-800/70 dark:bg-cyan-950/20 dark:text-cyan-100" role="status">
+      <h4 className="text-xs font-black">ALLOW BROWSER ACCESS TO THIS PC</h4>
+      <p className="mt-1 text-[11px] leading-5">Chrome protects websites from silently accessing your computer. Select <b>Check again</b> and allow <b>Loopback Network</b> access for revelacode.co.ke if asked. Then NEXORA can detect the local companion.</p>
+      {installerRelease.state === "available" && <a href={installerRelease.url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg bg-violet-700 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> Download Windows Installer</a>}
+      {installerRelease.state !== "available" && <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-slate-600 dark:text-cyan-100">{installerRelease.state === "checking" ? "Checking for the signed Windows installer…" : installerRelease.state === "not_published" ? "The signed Windows installer is not published yet." : "Installer availability could not be checked."}</span>
+        <button type="button" className={button} disabled={installerRelease.state === "checking"} onClick={checkInstallerRelease}><RefreshCw size={12}/> Check release</button>
+      </div>}
+    </div>}
+    {!agentReachable && loopbackPermission === "denied" && <div className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-3 text-slate-800 dark:border-rose-800/70 dark:bg-rose-950/20 dark:text-rose-100" role="alert">
+      <h4 className="text-xs font-black">BROWSER BLOCKED LOCAL CONNECTION</h4>
+      <p className="mt-1 text-[11px] leading-5">Open the site controls beside the address bar, enter Site settings, set <b>Local network</b> or <b>Loopback network</b> to Allow for revelacode.co.ke, return here and select Check again.</p>
+    </div>}
+    {!agentReachable && loopbackPermission === "granted" && <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-slate-800 dark:border-amber-800/70 dark:bg-amber-950/20 dark:text-amber-100">
       <div className="flex items-start gap-2">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-cyan-300"/>
+        <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
         <div className="min-w-0">
           <h4 className="text-xs font-black">LOCAL DEVICE BRIDGE NOT CONNECTED · OPTIONAL</h4>
-          <p className="mt-1 text-[11px] leading-5">The managed server toolchain is independent of this PC. Without the optional bridge, NEXORA cannot use this computer as a local execution node or install builds directly to a physical Android phone. You can still check the server toolchain above.</p>
-          <button type="button" className={button + " mt-3"} disabled={agentChecking} onClick={checkAgent}><RefreshCw size={13}/>{agentChecking ? "Checking…" : "Check local bridge"}</button>
+          <p className="mt-1 text-[11px] leading-5">The managed NEXORA server supplies the production toolchain independently of this PC. Connect this optional companion only when you want to use the PC as a local acceleration node or test directly on a physical Android phone.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {installerRelease.state === "available" && <a href={installerRelease.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-violet-700 px-4 py-2 text-[11px] font-bold text-white"><Download size={14}/> Download Windows Installer</a>}
+            {installerRelease.state !== "available" && <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600 dark:text-amber-100">
+              <span>{installerRelease.state === "checking" ? "Checking for the signed Windows installer…" : installerRelease.state === "not_published" ? "The signed Windows installer is not published yet." : "Installer availability could not be checked."}</span>
+              <button type="button" className={button} disabled={installerRelease.state === "checking"} onClick={checkInstallerRelease}><RefreshCw size={12}/> Check release</button>
+            </div>}
+            <button type="button" className={button} disabled={agentChecking} onClick={checkAgent}><RefreshCw size={13}/>{agentChecking ? "Checking…" : "Check again"}</button>
+          </div>
+          <p className="mt-2 text-[10px] leading-5 text-slate-500 dark:text-slate-400">Install once. NEXORA installs the background companion for your Windows account, starts it immediately and starts it automatically when you sign in again. This page checks for it automatically after installation. No Git, Python, terminal or pasted commands are required.</p>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">After the companion is detected, approve this NEXORA account once. Production access remains limited to this computer and the account you authorize.</p>
         </div>
       </div>
     </div>}
-    {accountAccessToken && !token && <section className="mt-4 rounded-xl border border-cyan-900/60 bg-[#081820] p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div><h4 className="flex items-center gap-2 text-xs font-black text-cyan-200"><Server size={14}/> SERVER-MANAGED PRODUCTION TOOLCHAIN</h4><p className="mt-1 text-[10px] text-slate-400">The production tools are installed on NEXORA's private worker. No local tool installation or device pairing is required to check server readiness.</p></div>
-        <button type="button" className={button} disabled={managedBusy} onClick={refreshManagedCapabilities}><RefreshCw size={12}/>{managedBusy ? "Checking…" : "Recheck server"}</button>
-      </div>
-      {managedCapabilities && <div className="mt-3 flex flex-wrap gap-2">
-        {[[ "blender","Blender" ],[ "godot","Godot 4" ],[ "ffmpeg","FFmpeg" ],[ "ffprobe","FFprobe" ],[ "java","Java 17" ],[ "adb","ADB" ],[ "android_sdk","Android SDK" ],[ "android_apk_inspector","APK Inspector" ]].map(([key,label])=><span key={key} className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold "+(managedCapabilities.toolchain?.[key]?"bg-emerald-950/40 text-emerald-200":"bg-slate-900 text-slate-500")}>{managedCapabilities.toolchain?.[key]?<CheckCircle2 size={11}/>:<XCircle size={11}/>} {label}</span>)}
-      </div>}
-      {managedCapabilities && <p className={"mt-2 text-[10px] "+(managedCapabilities.toolchain_ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.toolchain_ready ? "Server toolchain ready." : "The worker is reachable but the complete toolchain is not ready."}</p>}
-      {managedCapabilities && <p className={"mt-1 text-[10px] "+(managedCapabilities.workspace_storage?.ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.workspace_storage?.ready ? "Persistent server workspace volume verified." : managedCapabilities.workspace_storage?.note || "Persistent workspace storage is not verified."}</p>}
-      {!managedCapabilities && <p className="mt-2 text-[10px] text-amber-300">{managedError || "Sign in to check the managed server toolchain."}</p>}
-      {managedPlan && <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/60 p-3 text-[10px] leading-5">
-        <strong className="text-cyan-200">PLACEMENT RECOMMENDATION · {String(managedPlan.execution_location || "unknown").replaceAll("_"," ").toUpperCase()}</strong>
-        <p className="mt-1 text-slate-300">{managedPlan.reason}</p>
-        <p className="mt-1 text-slate-400">Local device metrics: not shared. Local capacity is treated as unknown.</p>
-        {managedPlan.execution_location==="managed_server" && <p className="mt-1 text-amber-300">Server preflight passed. Secure project transfer and remote job execution are not enabled yet, so this recommendation has not uploaded or started any project work.</p>}
-        {managedPlan.execution_location==="unavailable" && <p className="mt-1 text-amber-300">The standard server worker is not large enough for this workload. Choose a lighter profile or wait for higher-capacity compute.</p>}
-      </div>}
-    </section>}
     {accountAccessToken && !token && <section className="mt-4 rounded-xl border border-cyan-900/60 bg-[#081820] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div><h4 className="flex items-center gap-2 text-xs font-black text-cyan-200"><Server size={14}/> SERVER-MANAGED PRODUCTION TOOLCHAIN</h4><p className="mt-1 text-[10px] text-slate-400">Production tools are installed on NEXORA's private worker. No local tool installation or device pairing is required to check server readiness.</p></div>
@@ -415,10 +512,11 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         {managedPlan.execution_location==="unavailable" && <p className="mt-1 text-amber-300">The standard server worker is not large enough for this workload. Choose a lighter profile or wait for higher-capacity compute.</p>}
       </div>}
     </section>}
+
     {agentReachable && !token && <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-[11px] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-200">Local Agent is running on this PC. Select <b>Allow & connect this computer</b> to authorize this NEXORA account.</div>}
     {token && <div className="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h4 className="flex items-center gap-2 text-xs font-black"><Monitor size={15}/> OPTIONAL LOCAL HARDWARE CHECK</h4><p className="mt-1 text-[10px] text-slate-500">Local CPU/RAM/tool measurements stay on this PC unless you explicitly allow an anonymous resource summary for placement. Missing PC tools do not block the server toolchain.</p></div>
+        <div><h4 className="flex items-center gap-2 text-xs font-black"><Monitor size={15}/> OPTIONAL LOCAL HARDWARE CHECK</h4><p className="mt-1 text-[10px] text-slate-500">Local CPU/RAM/tool measurements stay on this PC unless you explicitly allow an anonymous resource summary for placement. Missing local tools do not block the server toolchain.</p></div>
         <button type="button" className={button} disabled={hardwareBusy} onClick={refreshHardware}><RefreshCw size={13}/> Recheck</button>
       </div>
       {capabilities && <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -448,10 +546,10 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
           {[[ "blender","Blender" ],[ "godot","Godot 4" ],[ "ffmpeg","FFmpeg" ],[ "ffprobe","FFprobe" ],[ "java","Java" ],[ "adb","ADB" ],[ "android_sdk","Android SDK" ],[ "android_apk_inspector","APK Inspector" ]].map(([key,label])=><span key={key} className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold "+(managedCapabilities.toolchain?.[key]?"bg-emerald-950/40 text-emerald-200":"bg-slate-900 text-slate-500")}>{managedCapabilities.toolchain?.[key]?<CheckCircle2 size={11}/>:<XCircle size={11}/>} {label}</span>)}
         </div>}
         {!managedCapabilities && <p className="mt-2 text-[10px] text-amber-300">{managedError || "Sign in to check whether the managed worker has been provisioned."}</p>}
-        {managedCapabilities && <p className={"mt-2 text-[10px] "+(managedCapabilities.toolchain_ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.toolchain_ready?"Managed server toolchain is installed and responding.":"Managed worker is reachable, but one or more tools are not ready."}</p>}
+        {managedCapabilities && <p className={"mt-2 text-[10px] "+(managedCapabilities.toolchain_ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.toolchain_ready?"Managed server toolchain is installed and responding.":"Managed worker is reachable, but one or more required tools are not ready."}</p>}
         {managedCapabilities && <p className={"mt-1 text-[10px] "+(managedCapabilities.workspace_storage?.ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.workspace_storage?.ready?"Persistent server workspace volume is mounted and writable.":managedCapabilities.workspace_storage?.note || "Persistent server workspace storage has not been verified."}</p>}
         <label className="mt-3 flex items-start gap-2 text-[10px] leading-5 text-slate-300">
-          <input type="checkbox" className="mt-1" checked={shareHardwareMetrics} onChange={(event)=>void setHardwareMetricsConsent(event.target.checked)} disabled={!accountAccessToken}/>
+          <input type="checkbox" className="mt-1" checked={shareHardwareMetrics} onChange={(event)=>void setHardwareMetricsConsent(event.target.checked)} disabled={!capabilities || !accountAccessToken}/>
           <span>Allow NEXORA to share an anonymous resource summary (CPU load/headroom, RAM available, free disk, tool availability and GPU memory) with the signed-in control plane to recommend local or managed-server placement. No file paths, device IDs, project files or source media are included.</span>
         </label>
         {managedError && <p className="mt-2 text-[10px] text-amber-300">{managedError}</p>}
