@@ -108,33 +108,33 @@ body {
 }
 .nexora-page-heading { min-height: 52px; }
 .nexora-sidebar-nav { scrollbar-width: thin; }
-.nexora-shell aside.fixed > div {
+.nexora-shell > aside > div {
   min-height: 0;
 }
-.nexora-shell aside.fixed .nexora-sidebar-nav > div > div button {
+.nexora-shell > aside .nexora-sidebar-nav > div > div button {
   border-radius: 8px;
 }
-.nexora-shell aside.fixed .nexora-sidebar-nav > div > div button[aria-current="page"] {
+.nexora-shell > aside .nexora-sidebar-nav > div > div button[aria-current="page"] {
   background: linear-gradient(90deg, rgba(0, 203, 244, .22), rgba(0, 203, 244, .035));
 }
-.nexora-shell aside.fixed .shrink-0.border-t {
+.nexora-shell > aside .shrink-0.border-t {
   padding: 10px;
   gap: 8px;
 }
-.nexora-shell aside.fixed .shrink-0.border-t > div:first-child {
+.nexora-shell > aside .shrink-0.border-t > div:first-child {
   min-height: 82px;
   padding: 10px 11px;
   border-radius: 10px;
 }
-.nexora-shell aside.fixed .shrink-0.border-t > button {
+.nexora-shell > aside .shrink-0.border-t > button {
   min-height: 61px;
   padding: 9px 11px;
   border-radius: 10px;
 }
-.nexora-shell aside.fixed .shrink-0.border-t > div:first-child > div:first-child > span:first-child {
+.nexora-shell > aside .shrink-0.border-t > div:first-child > div:first-child > span:first-child {
   font-size: 11px;
 }
-.nexora-shell aside.fixed .shrink-0.border-t > div:first-child > div:first-child > span:last-child {
+.nexora-shell > aside .shrink-0.border-t > div:first-child > div:first-child > span:last-child {
   font-size: 9px;
 }
 .nexora-topbar { gap: 12px; }
@@ -593,13 +593,13 @@ body {
 .nexora-page-heading h1 { font-size: clamp(24px, 2.1vw, 32px) !important; line-height: 1.12 !important; }
 .nexora-page-heading p { font-size: 13px !important; color: #8ea3bb !important; margin-top: 6px !important; }
 .nexora-topbar { height: 62px !important; border-color: rgba(42,65,93,.72) !important; }
-.nexora-shell aside.fixed { width: 238px; background: linear-gradient(180deg,#0b1422,#09111d) !important; border-color: rgba(42,65,93,.72) !important; }
-.nexora-shell aside.fixed .nexora-sidebar-nav { padding: 16px 10px !important; }
-.nexora-shell aside.fixed .nexora-sidebar-nav > div { margin-bottom: 14px !important; }
-.nexora-shell aside.fixed .nexora-sidebar-nav > div > div button { height: 40px !important; font-size: 13px !important; border-radius: 10px !important; }
-.nexora-shell aside.fixed .shrink-0.border-t { gap: 8px !important; padding: 10px !important; }
-.nexora-shell aside.fixed .shrink-0.border-t > div:first-child { min-height: 68px !important; }
-.nexora-shell aside.fixed .shrink-0.border-t > button { min-height: 48px !important; }
+.nexora-shell > aside { width: 238px; background: linear-gradient(180deg,#0b1422,#09111d) !important; border-color: rgba(42,65,93,.72) !important; }
+.nexora-shell > aside .nexora-sidebar-nav { padding: 16px 10px !important; }
+.nexora-shell > aside .nexora-sidebar-nav > div { margin-bottom: 14px !important; }
+.nexora-shell > aside .nexora-sidebar-nav > div > div button { height: 40px !important; font-size: 13px !important; border-radius: 10px !important; }
+.nexora-shell > aside .shrink-0.border-t { gap: 8px !important; padding: 10px !important; }
+.nexora-shell > aside .shrink-0.border-t > div:first-child { min-height: 68px !important; }
+.nexora-shell > aside .shrink-0.border-t > button { min-height: 48px !important; }
 .nexora-overview { display: flex; flex-direction: column; gap: 16px; }
 .nx-stats-grid { height: auto !important; gap: 12px !important; }
 .nx-stat { min-height: 88px !important; height: auto !important; border-radius: 12px !important; padding: 12px 14px !important; background: linear-gradient(145deg,#101e30,#0c1726) !important; }
@@ -655,7 +655,7 @@ body {
 }
 
 /* Dashboard hierarchy: glance first, resume work second, actions third, details last */
-.nexora-shell aside.fixed { width: auto !important; }
+.nexora-shell > aside { width: auto !important; }
 .nexora-overview > .nx-stats-grid { order: 0; }
 .nexora-overview > .nx-hero-grid { order: 1; }
 .nexora-overview > .nx-quick-actions { order: 2; }

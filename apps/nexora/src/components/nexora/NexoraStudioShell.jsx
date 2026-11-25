@@ -164,15 +164,15 @@ export default function NexoraStudioShell({
   );
 
   return (
-    <div className="dark nexora-shell min-h-screen bg-[#070D16] text-slate-100">
-      <aside className={"fixed inset-y-0 left-0 z-40 hidden border-r border-[#20334B] bg-[#0A1220] transition-all duration-200 xl:block "+(collapsed?"w-[76px]":"w-[230px]")}>
+    <div className="dark nexora-shell min-h-screen bg-[#070D16] text-slate-100 transition-[grid-template-columns] duration-200 lg:grid" style={{ gridTemplateColumns: collapsed ? "76px minmax(0, 1fr)" : "230px minmax(0, 1fr)" }}>
+      <aside className="relative z-40 hidden h-screen min-h-0 w-full border-r border-[#20334B] bg-[#0A1220] transition-colors duration-200 lg:sticky lg:top-0 lg:col-start-1 lg:row-start-1 lg:block">
         <SidebarContent/>
       </aside>
-      {mobileOpen && <div className="fixed inset-0 z-50 xl:hidden"><button type="button" aria-label="Close menu overlay" onClick={()=>setMobileOpen(false)} className="absolute inset-0 bg-black/70"/><aside className="relative h-full w-[min(300px,86vw)] border-r border-[#20334B] bg-[#0A1220]"><SidebarContent mobile/></aside></div>}
+      {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button type="button" aria-label="Close menu overlay" onClick={()=>setMobileOpen(false)} className="absolute inset-0 bg-black/70"/><aside className="relative h-full w-[min(300px,86vw)] border-r border-[#20334B] bg-[#0A1220]"><SidebarContent mobile/></aside></div>}
 
-      <div className={"min-h-screen transition-[padding] duration-200 "+(collapsed?"xl:pl-[76px]":"xl:pl-[230px]")}>
+      <div className="min-h-screen min-w-0 lg:col-start-2 lg:row-start-1">
         <header className="nexora-topbar sticky top-0 z-30 flex h-[58px] items-center gap-3 border-b border-[#20334B] bg-[#080F1B]/95 px-[14px] backdrop-blur-xl">
-          <button type="button" onClick={()=>setMobileOpen(true)} className="rounded-lg p-2 text-slate-300 hover:bg-white/5 xl:hidden" aria-label="Open navigation"><Menu size={19}/></button>
+          <button type="button" onClick={()=>setMobileOpen(true)} className="rounded-lg p-2 text-slate-300 hover:bg-white/5 lg:hidden" aria-label="Open navigation"><Menu size={19}/></button>
           
           <div className="relative shrink-0">
             <button type="button" onClick={()=>setWorkspaceOpen(value=>!value)} className="flex h-[37px] w-[224px] shrink-0 items-center gap-2 rounded-[9px] border border-[#20334B] bg-[#0D1929] px-3 text-[11px] font-extrabold tracking-wide text-cyan-300 hover:border-cyan-500/50">

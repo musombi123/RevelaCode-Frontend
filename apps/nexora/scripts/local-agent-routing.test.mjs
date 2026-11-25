@@ -194,3 +194,22 @@ test("Keep-device-version action only clears recovery after authoritative data l
   assert.ok(writeRecovery > fetchAssets);
   assert.match(handler, /catch \(error\)[\s\S]*browser recovery copy has been kept/);
 });
+
+
+test("NEXORA desktop sidebar occupies its own responsive layout column", async () => {
+  const shell = await readComponent("NexoraStudioShell.jsx");
+  assert.match(shell, /lg:grid/);
+  assert.match(shell, /gridTemplateColumns: collapsed \? "76px minmax\(0, 1fr\)" : "230px minmax\(0, 1fr\)"/);
+  assert.match(shell, /lg:sticky lg:top-0 lg:col-start-1/);
+  assert.match(shell, /lg:col-start-2 lg:row-start-1/);
+  assert.doesNotMatch(shell, /fixed inset-y-0 left-0 z-40/);
+});
+
+test("Local Agent pairing is code-free and requires a signed-in user's explicit approval", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.doesNotMatch(bridge, /pairCode|setPairCode|One-time local pairing code|8-digit code shown/);
+  assert.match(bridge, /consent: true/);
+  assert.match(bridge, /account_access_token: accountAccessToken/);
+  assert.match(bridge, /Allow & connect this computer/);
+  assert.match(bridge, /disabled=\{busy \|\| Boolean\(token\) \|\| !accountAccessToken\}/);
+});
