@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 const AndroidBuildConsole = lazy(() => import("./AndroidBuildConsole.jsx"));
 const NexoraDeviceBridge = lazy(() => import("./NexoraDeviceBridge.jsx"));
+const NexoraManagedComputeStatus = lazy(() => import("./NexoraManagedComputeStatus.jsx"));
 const CreatorFlowPanel = lazy(() => import("./CreatorFlowPanel.jsx"));
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
@@ -2165,6 +2166,7 @@ export default function NexoraFoundryWorkspace() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={videoRightsConfirmed} onChange={event=>setVideoRightsConfirmed(event.target.checked)}/> I own this video or have permission to use it</label>
             <label className="flex items-center gap-2"><input type="checkbox" checked={originalAssetsConfirmed} onChange={event=>setOriginalAssetsConfirmed(event.target.checked)}/> Generate original assets; do not copy protected source assets</label>
           </div>
+          <NexoraManagedComputeStatus accountAccessToken={nexoraSession?.access_token || ""}/>
 
 
           <div className="mt-3 border border-cyan-800/60 bg-[#0d1722] p-3">

@@ -215,16 +215,39 @@ test("Local Agent pairing is code-free and requires a signed-in user's explicit 
 });
 
 
-test("Local Agent connection refusal is explained and pairing waits for a successful health check", async () => {
-  const bridge = await readComponent("NexoraDeviceBridge.jsx");
-  assert.match(bridge, /const checkAgent = useCallback/);
-  assert.match(bridge, /fetch\(\`\$\{API\}\/health\`/);
-  assert.match(bridge, /Cannot reach 127\.0\.0\.1:8765/);
-  assert.match(bridge, /agentReachable\) \{/);
-  assert.match(bridge, /disabled=\{busy \|\| !agentReachable \|\| Boolean\(token\) \|\| !accountAccessToken\}/);
-  assert.match(bridge, /Check connection/);
-  assert.match(bridge, /install-nexora-local-agent\.ps1/);
-  assert.match(bridge, /Copy PowerShell install command/);
-  assert.doesNotMatch(bridge, /setInterval|window\.setInterval/);
+
+test("Asset Library displays the managed server toolchain installed by NEXORA", async () => {
+  const workspace = await readComponent("NexoraFoundryWorkspace.jsx");
+  const panel = await readComponent("NexoraManagedComputeStatus.jsx");
+  assert.match(workspace, /NexoraManagedComputeStatus accountAccessToken/);
+  for (const tool of ["blender", "godot", "ffmpeg", "ffprobe", "java", "adb", "android_sdk"]) {
+    assert.ok(panel.includes('"'+tool+'"'));
+  }
+  assert.ok(panel.includes("/api/compute/capabilities"));
+  assert.ok(panel.includes("remote job execution is activated separately"));
 });
 
+test("Device Lab requires explicit consent before sending local resource metrics", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.match(bridge, /shareHardwareMetrics, setShareHardwareMetrics/);
+  assert.match(bridge, /consent_to_share_hardware_metrics: true/);
+  assert.match(bridge, /setHardwareMetricsConsent/);
+  assert.match(bridge, /No file paths, device IDs, project files or source media are included/);
+  assert.match(bridge, /job execution are not enabled yet/);
+  assert.doesNotMatch(bridge, /Hardware details remain local; only the final game build/);
+});
+
+test("Local Agent installation is user-friendly and discovery retries automatically after install", async () => {
+  const bridge = await readComponent("NexoraDeviceBridge.jsx");
+  assert.ok(bridge.includes("const checkAgent = useCallback"));
+  assert.ok(bridge.includes("releases/latest/download/NEXORA-Local-Agent-Setup.exe"));
+  assert.ok(bridge.includes("starts it automatically when you sign in again"));
+  assert.ok(bridge.includes("No Git, Python, terminal or pasted commands are required"));
+  assert.ok(bridge.includes("attempts < 18"));
+  assert.ok(bridge.includes("window.setTimeout"));
+  assert.ok(bridge.includes("Check again"));
+  assert.ok(!bridge.includes("Copy PowerShell install command"));
+  assert.ok(!bridge.includes("install-nexora-local-agent.ps1"));
+  assert.ok(!bridge.includes("Set-ExecutionPolicy"));
+  assert.ok(!bridge.includes("git clone"));
+});
