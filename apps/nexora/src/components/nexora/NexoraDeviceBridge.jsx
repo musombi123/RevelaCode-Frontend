@@ -8,7 +8,9 @@ const primary = "inline-flex min-h-9 items-center justify-center gap-2 rounded-x
 
 export default function NexoraDeviceBridge({ packageId = "com.nexora.game", accountAccessToken = "", expectedAccountUserId = "", onConnectionChange = () => {} }) {
   const [token, setToken] = useState("");
-  const [status, setStatus] = useState("Checking local desktop bridge…");
+  const [agentReachable, setAgentReachable] = useState(false);
+  const [agentChecking, setAgentChecking] = useState(true);
+  const [status, setStatus] = useState("Checking whether the Local Agent is running on this computer…");
   const [devices, setDevices] = useState([]);
   const [serial, setSerial] = useState("");
   const [apk, setApk] = useState(null);
@@ -69,38 +71,50 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   }, [request, token, loadHardware]);
 
 
+  const checkAgent = useCallback(async () => {
+    setAgentChecking(true);
+    try {
+      const response = await fetch(`${API}/health`, {
+        mode: "cors",
+        credentials: "omit",
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(`Local Agent health check failed (HTTP ${response.status}).`);
+      }
+      const result = await response.json();
+      if (result.status !== "ready") {
+        throw new Error("The NEXORA Local Agent is running but is not ready yet.");
+      }
+      setAgentReachable(true);
+      const storedToken = sessionStorage.getItem("nexora.local-agent.token");
+      if (storedToken) {
+        setToken(storedToken);
+        setStatus("Local Agent detected. Verifying the saved browser pairing…");
+      } else {
+        setStatus("Local Agent detected. Approve this computer to connect.");
+      }
+      return true;
+    } catch {
+      setAgentReachable(false);
+      setStatus("Cannot reach 127.0.0.1:8765. The NEXORA Local Agent is not running on this computer.");
+      onConnectionChange(false);
+      return false;
+    } finally {
+      setAgentChecking(false);
+    }
+  }, [onConnectionChange]);
+
   useEffect(() => {
-    let cancelled = false;
-    fetch(`${API}/health`, { mode: "cors", credentials: "omit", cache: "no-store" })
-      .then((response) => response.json())
-      .then(async (result) => {
-        if (cancelled) return;
-        if (result.status !== "ready") {
-          setStatus("NEXORA Local Compute Agent is unavailable.");
-          return;
-        }
-        const storedToken = sessionStorage.getItem("nexora.local-agent.token");
-        if (!storedToken) {
-          setStatus("Local agent detected · pair this browser to continue.");
-          return;
-        }
-        try {
-          await loadHardware(storedToken);
-          if (cancelled) return;
-          setToken(storedToken);
-          onConnectionChange(true);
-          setStatus("Local compute agent reconnected for this browser session.");
-        } catch {
-          sessionStorage.removeItem("nexora.local-agent.token");
-          onConnectionChange(false);
-          if (!cancelled) setStatus("The saved local pairing is expired or belongs to another NEXORA account. Pair this computer again.");
-        }
-      })
-      .catch(() => { if (!cancelled) setStatus("Local agent not detected. Install and start the NEXORA Local Compute Agent on your desktop."); });
-    return () => { cancelled = true; };
-  }, [loadHardware, onConnectionChange]);
+    // One health probe on mount. No background polling or automatic /pair retries.
+    void checkAgent();
+  }, [checkAgent]);
 
   const pair = async () => {
+    if (!agentReachable) {
+      setStatus("Start the NEXORA Local Agent on this computer, then choose Check connection.");
+      return;
+    }
     if (!accountAccessToken) {
       setStatus("Sign in to your NEXORA account before pairing this computer.");
       return;
@@ -121,7 +135,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       onConnectionChange(true);
       setStatus("This computer is connected to NEXORA · local hardware preflight is ready");
     } catch (error) {
-      setStatus(error.message);
+      setStatus(error.message || "The Local Agent pairing request failed.");
       onConnectionChange(false);
     } finally {
       setBusy(false);
@@ -129,9 +143,19 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   };
 
   useEffect(() => {
-    if (!token) return;
-    refreshDevices().catch((error) => setStatus(error.message));
-  }, [token, refreshDevices]);
+    if (!token || !agentReachable) return;
+    let cancelled = false;
+    refreshDevices().catch((error) => {
+      if (cancelled) return;
+      sessionStorage.removeItem("nexora.local-agent.token");
+      setToken("");
+      setCapabilities(null);
+      setPreflight(null);
+      onConnectionChange(false);
+      setStatus(error.message || "The saved Local Agent pairing could not be restored. Connect again.");
+    });
+    return () => { cancelled = true; };
+  }, [token, agentReachable, refreshDevices, onConnectionChange]);
 
   const refreshHardware = async () => {
     setHardwareBusy(true);
@@ -213,11 +237,40 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         <div className="text-[10px] font-black tracking-wide text-slate-700 dark:text-slate-200">CONNECT THIS COMPUTER</div>
         <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Choose Allow & connect to authorize this signed-in NEXORA account to run jobs you start on this PC. No pairing code or terminal entry is required.</p>
       </div>
-      <button type="button" className={primary} disabled={busy || Boolean(token) || !accountAccessToken} onClick={pair}><ShieldCheck size={14}/>{busy ? "Connecting…" : "Allow & connect this computer"}</button>
+      <button type="button" className={primary} disabled={busy || !agentReachable || Boolean(token) || !accountAccessToken} onClick={pair}><ShieldCheck size={14}/>{busy ? "Connecting…" : "Allow & connect this computer"}</button>
+      <button type="button" className={button} disabled={agentChecking} onClick={checkAgent}><RefreshCw size={13}/>{agentChecking ? "Checking…" : "Check connection"}</button>
       <button type="button" className={button} disabled={busy || !token} onClick={refreshDevices}><RefreshCw size={13}/> Refresh hardware & devices</button>
       <button type="button" className={button} disabled={!token} onClick={async()=>{try{await request("/disconnect",{method:"POST"});}catch{}sessionStorage.removeItem("nexora.local-agent.token");setToken("");setDevices([]);setSerial("");setCapabilities(null);setPreflight(null);onConnectionChange(false);setStatus("Local agent disconnected");}}>Disconnect</button>
     </div>
-    <p className="mt-2 text-[11px] text-slate-500">{status}</p>
+    <p className={"mt-2 text-[11px] " + (agentReachable ? "text-emerald-500" : "text-amber-500")} role="status">{status}</p>
+    {!agentReachable && <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-slate-800 dark:border-amber-800/70 dark:bg-amber-950/20 dark:text-amber-100">
+      <div className="flex items-start gap-2">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
+        <div className="min-w-0">
+          <h4 className="text-xs font-black">THE LOCAL AGENT IS NOT RUNNING</h4>
+          <p className="mt-1 text-[11px] leading-5">This is a connection to your own PC, not a cloud server. Connection refused means nothing is listening on port 8765 on the computer running this browser. Start the NEXORA Local Agent before pairing.</p>
+          <ol className="mt-2 list-decimal space-y-1 pl-4 text-[11px] leading-5">
+            <li>Download and run the Windows installer below on the PC you want NEXORA to use.</li>
+            <li>Keep the PowerShell window open while producing games.</li>
+            <li>Return here and select <b>Check connection</b>, then <b>Allow & connect this computer</b>.</li>
+          </ol>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href="https://raw.githubusercontent.com/musombi123/Procedural-Game-Foundry/main/scripts/install-nexora-local-agent.ps1" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-violet-700 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> Download Windows installer</a>
+            <button type="button" className={button} onClick={async () => {
+              const command = "$script = Join-Path $env:TEMP 'install-nexora-local-agent.ps1'; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/musombi123/Procedural-Game-Foundry/main/scripts/install-nexora-local-agent.ps1' -OutFile $script; Set-ExecutionPolicy -Scope Process Bypass -Force; & $script";
+              try {
+                await navigator.clipboard.writeText(command);
+                setStatus("Installer command copied. Paste it into PowerShell on the PC you want to connect.");
+              } catch {
+                setStatus("Open the installer link above, save the .ps1 file, then run it from PowerShell.");
+              }
+            }}>Copy PowerShell install command</button>
+          </div>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Run this on the target Windows PC as your normal user. Python 3.11+ is required. The installer does not grant remote access; the NEXORA account must still approve pairing in this browser.</p>
+        </div>
+      </div>
+    </div>}
+    {agentReachable && !token && <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-[11px] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-200">Local Agent is running on this PC. Select <b>Allow & connect this computer</b> to authorize this NEXORA account.</div>}
     {token && <div className="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h4 className="flex items-center gap-2 text-xs font-black"><Monitor size={15}/> LOCAL HARDWARE & ENVIRONMENT CHECK</h4><p className="mt-1 text-[10px] text-slate-500">NEXORA reads your computer's resources locally; this information is not uploaded.</p></div>
