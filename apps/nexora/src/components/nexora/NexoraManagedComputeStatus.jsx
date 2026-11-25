@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, RefreshCw, Server, ShieldCheck, XCircle, AlertTriangle, CircleHelp } from "lucide-react";
+import { CheckCircle2, RefreshCw, Server, ShieldCheck, XCircle, AlertTriangle, HelpCircle } from "lucide-react";
 
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 const TOOLS = [
@@ -21,7 +21,7 @@ const WORKLOADS = [
 function CapabilityMark({ value }) {
   if (value === true) return <CheckCircle2 size={11} className="text-emerald-300"/>;
   if (value === false) return <XCircle size={11} className="text-amber-300"/>;
-  return <CircleHelp size={11} className="text-slate-500"/>;
+  return <HelpCircle size={11} className="text-slate-500"/>;
 }
 
 export default function NexoraManagedComputeStatus({ accountAccessToken = "" }) {
@@ -86,7 +86,7 @@ export default function NexoraManagedComputeStatus({ accountAccessToken = "" }) 
               ? "border-amber-900/70 bg-amber-950/20 text-amber-200"
               : "border-slate-700 bg-slate-900 text-slate-400";
           return <span key={key} className={"inline-flex items-center gap-1 border px-2 py-1 text-[9px] font-bold " + tone}>
-            {known ? (installed ? <CheckCircle2 size={10}/> : <XCircle size={10}/>) : <CircleHelp size={10}/>}
+            {known ? (installed ? <CheckCircle2 size={10}/> : <XCircle size={10}/>) : <HelpCircle size={10}/>}
             {label}{optional ? " · optional" : ""}
           </span>;
         })}
