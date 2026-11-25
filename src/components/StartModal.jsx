@@ -121,6 +121,10 @@ export default function StartModal({ onComplete }) {
   // This honours all supported Vite API aliases and the production fallback.
   const baseUrl = resolveBackendBaseUrl(import.meta.env || {});
 
+  const [identityProviders, setIdentityProviders] = useState({});
+  const [phoneChallengeId, setPhoneChallengeId] = useState("");
+  const [phoneCode, setPhoneCode] = useState("");
+
   useEffect(() => {
     let active = true;
     if (!baseUrl) return undefined;
@@ -145,9 +149,6 @@ export default function StartModal({ onComplete }) {
   // null opens the entry choice (sign in, create an account, or explore as guest)
 
   const [step, setStep] = useState("form");
-  const [identityProviders, setIdentityProviders] = useState({});
-  const [phoneChallengeId, setPhoneChallengeId] = useState("");
-  const [phoneCode, setPhoneCode] = useState("");
 
   useLayoutEffect(() => {
     if (new URLSearchParams(location.search).get("mode") === "register") {
