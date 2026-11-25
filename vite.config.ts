@@ -14,7 +14,7 @@ function rpsviStagingOriginIsolation() {
     enforce: 'pre',
     transform(source, id) {
       if (id.includes('/node_modules/')) return null;
-      if (!/\\.[jt]sx?(?:\\?|$)/.test(id)) return null;
+      if (!/\.[jt]sx?(?:\?|$)/.test(id)) return null;
 
       let transformed = source;
       for (const host of RPSVI_FORBIDDEN_PRODUCTION_HOSTS) {
@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => ({
         target: 'https://revelacode-backend.onrender.com',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\\/api/, '/api')
+        rewrite: (path) => path.replace(/^\/api/, '/api')
       },
       '/support': {
         target: 'https://revelacode-backend.onrender.com',
