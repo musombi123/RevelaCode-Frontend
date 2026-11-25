@@ -81,17 +81,18 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     }
   }, [accountAccessToken, cloudRequest]);
 
-  const requestManagedPlan = useCallback(async (systemProfile, selectedWorkload = workloadProfile, consent = shareHardwareMetrics) => {
-    if (!consent || !systemProfile || !accountAccessToken) return null;
+  const requestManagedPlan = useCallback(async (systemProfile, selectedWorkload = "procedural_3d", consent = false) => {
+    if (!accountAccessToken) return null;
+    const metricsShared = consent === true && Boolean(systemProfile);
     setManagedBusy(true);
     setManagedError("");
     try {
       const result = await cloudRequest("/api/compute/plan", {
         method: "POST",
         body: JSON.stringify({
-          workload: selectedWorkload,
-          local_profile: systemProfile,
-          consent_to_share_hardware_metrics: true,
+          workload: selectedWorkload === "editor_2d" ? "workspace_editing" : selectedWorkload,
+          local_profile: metricsShared ? systemProfile : {},
+          consent_to_share_hardware_metrics: metricsShared,
         }),
       });
       setManagedPlan(result);
@@ -103,9 +104,16 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     } finally {
       setManagedBusy(false);
     }
-  }, [accountAccessToken, cloudRequest, shareHardwareMetrics, workloadProfile]);
+  }, [accountAccessToken, cloudRequest]);
 
   useEffect(() => { void refreshManagedCapabilities(); }, [refreshManagedCapabilities]);
+
+  useEffect(() => {
+    if (managedCapabilities?.available && !shareHardwareMetrics) {
+      // The default placement check sends no local device information. The server is selected only when its own tools and capacity pass.
+      void requestManagedPlan(null, workloadProfile, false);
+    }
+  }, [managedCapabilities?.available, shareHardwareMetrics, workloadProfile, requestManagedPlan]);
 
   const checkInstallerRelease = useCallback(async () => {
     setInstallerRelease({ state: "checking", url: "" });
@@ -142,7 +150,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     setShareHardwareMetrics(enabled);
     if (!enabled) {
       setManagedPlan(null);
-      setManagedError("Hardware metrics remain on this computer. No local resource summary will be sent.");
+      setManagedError("Local CPU/RAM/tool measurements stay on this PC. No personal-device metrics are sent.");
       return;
     }
     if (capabilities) await requestManagedPlan(capabilities, workloadProfile, true);
@@ -487,7 +495,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     {agentReachable && !token && <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-[11px] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-200">Local Agent is running on this PC. Select <b>Allow & connect this computer</b> to authorize this NEXORA account.</div>}
     {token && <div className="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h4 className="flex items-center gap-2 text-xs font-black"><Monitor size={15}/> LOCAL HARDWARE & ENVIRONMENT CHECK</h4><p className="mt-1 text-[10px] text-slate-500">Resource measurements stay on this PC unless you explicitly enable the workload-placement consent below.</p></div>
+        <div><h4 className="flex items-center gap-2 text-xs font-black"><Monitor size={15}/> OPTIONAL LOCAL HARDWARE CHECK</h4><p className="mt-1 text-[10px] text-slate-500">Local CPU/RAM/tool measurements stay on this PC unless you explicitly allow an anonymous resource summary for placement. Missing local tools do not block the server toolchain.</p></div>
         <button type="button" className={button} disabled={hardwareBusy} onClick={refreshHardware}><RefreshCw size={13}/> Recheck</button>
       </div>
       {capabilities && <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -503,21 +511,22 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
           {preflight && <div className={`mt-3 rounded-lg p-3 text-[11px] ${preflight.ready?"bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200":"bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200"}`}><strong>{preflight.ready?"Requirements satisfied":"Requirements not yet satisfied"}</strong><p className="mt-1 leading-5">{preflight.summary}</p></div>}
         </div>
         <div>
-          <div className="text-[10px] font-bold text-slate-500">LOCAL DEVICE TOOLCHAIN</div>
+          <div className="text-[10px] font-bold text-slate-500">OPTIONAL LOCAL DEVICE TOOLS · NOT REQUIRED ON THE SERVER</div>
           <div className="mt-2 flex flex-wrap gap-2">{toolLabels.map(([key,label])=><span key={key} className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold ${tools[key]?.available?"bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200":"bg-slate-100 text-slate-500 dark:bg-slate-900"}`}>{tools[key]?.available?<CheckCircle2 size={11}/>:<XCircle size={11}/>} {label}</span>)}</div>
           {preflight && <div className="mt-3 space-y-1.5">{preflight.checks.map((item)=><div key={item.name} className="flex items-start gap-2 text-[10px]"><span className={item.status==="pass"?"text-emerald-600":item.status==="fail"?"text-rose-500":"text-amber-500"}>{item.status==="pass"?<CheckCircle2 size={12}/>:<AlertTriangle size={12}/>}</span><span className="text-slate-500"><strong className="text-slate-700 dark:text-slate-300">{item.name}:</strong> {item.detail}</span></div>)}</div>}
         </div>
       </div>
       <div className="mt-4 rounded-xl border border-cyan-900/60 bg-[#081820] p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div><h4 className="flex items-center gap-2 text-xs font-black text-cyan-200"><Server size={14}/> MANAGED SERVER TOOLCHAIN</h4><p className="mt-1 text-[10px] text-slate-400">Blender, Godot 4, FFmpeg/FFprobe, Java and Android SDK/ADB are provisioned on NEXORA's private worker.</p></div>
+          <div><h4 className="flex items-center gap-2 text-xs font-black text-cyan-200"><Server size={14}/> MANAGED SERVER TOOLCHAIN</h4><p className="mt-1 text-[10px] text-slate-400">Blender, Godot 4, FFmpeg/FFprobe, Java and Android SDK/ADB are preinstalled on NEXORA's private worker. Your PC does not need those tools for a managed-server workload.</p></div>
           <button type="button" className={button} disabled={managedBusy || !accountAccessToken} onClick={refreshManagedCapabilities}><RefreshCw size={12}/>{managedBusy ? "Checking…" : "Recheck server"}</button>
         </div>
         {managedCapabilities && <div className="mt-3 flex flex-wrap gap-2">
           {[[ "blender","Blender" ],[ "godot","Godot 4" ],[ "ffmpeg","FFmpeg" ],[ "ffprobe","FFprobe" ],[ "java","Java" ],[ "adb","ADB" ],[ "android_sdk","Android SDK" ],[ "android_apk_inspector","APK Inspector" ]].map(([key,label])=><span key={key} className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold "+(managedCapabilities.toolchain?.[key]?"bg-emerald-950/40 text-emerald-200":"bg-slate-900 text-slate-500")}>{managedCapabilities.toolchain?.[key]?<CheckCircle2 size={11}/>:<XCircle size={11}/>} {label}</span>)}
         </div>}
         {!managedCapabilities && <p className="mt-2 text-[10px] text-amber-300">{managedError || "Sign in to check whether the managed worker has been provisioned."}</p>}
-        {managedCapabilities && <p className={"mt-2 text-[10px] "+(managedCapabilities.toolchain_ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.toolchain_ready?"Server toolchain ready.":"Server worker is reachable, but one or more tools are not ready."}</p>}
+        {managedCapabilities && <p className={"mt-2 text-[10px] "+(managedCapabilities.toolchain_ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.toolchain_ready?"Managed server toolchain is installed and responding.":"Managed worker is reachable, but one or more required tools are not ready."}</p>}
+        {managedCapabilities && <p className={"mt-1 text-[10px] "+(managedCapabilities.workspace_storage?.ready?"text-emerald-300":"text-amber-300")}>{managedCapabilities.workspace_storage?.ready?"Persistent server workspace volume is mounted and writable.":managedCapabilities.workspace_storage?.note || "Persistent server workspace storage has not been verified."}</p>}
         <label className="mt-3 flex items-start gap-2 text-[10px] leading-5 text-slate-300">
           <input type="checkbox" className="mt-1" checked={shareHardwareMetrics} onChange={(event)=>void setHardwareMetricsConsent(event.target.checked)} disabled={!capabilities || !accountAccessToken}/>
           <span>Allow NEXORA to share an anonymous resource summary (CPU load/headroom, RAM available, free disk, tool availability and GPU memory) with the signed-in control plane to recommend local or managed-server placement. No file paths, device IDs, project files or source media are included.</span>
