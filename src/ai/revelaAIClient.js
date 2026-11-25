@@ -5,9 +5,9 @@
  * documents/images and authenticated voice transcripts use the existing
  * backend /ai pipeline, which coordinates configured providers.
  */
-const API_BASE = String(
-  import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com"
-).trim().replace(/\/+$/, "");
+import { REVELAAI_ORIGIN } from "@/config/serviceOrigins.js";
+
+const API_BASE = REVELAAI_ORIGIN;
 
 const isMongoUserId = (value) => /^[a-f\d]{24}$/i.test(String(value || "").trim());
 
