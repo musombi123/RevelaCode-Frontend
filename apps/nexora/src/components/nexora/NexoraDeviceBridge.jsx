@@ -10,7 +10,9 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
   const [token, setToken] = useState("");
   const [agentReachable, setAgentReachable] = useState(false);
   const [agentChecking, setAgentChecking] = useState(true);
-  const [status, setStatus] = useState("Checking whether the Local Agent is running on this computer…");
+  const [agentCheckAttempted, setAgentCheckAttempted] = useState(false);
+  const [loopbackPermission, setLoopbackPermission] = useState("checking");
+  const [status, setStatus] = useState("Checking browser permission for the local companion…");
   const [devices, setDevices] = useState([]);
   const [serial, setSerial] = useState("");
   const [apk, setApk] = useState(null);
@@ -27,7 +29,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     const headers = new Headers(options.headers || {});
     const activeToken = explicitToken || token;
     if (auth && activeToken) headers.set("Authorization", `Bearer ${activeToken}`);
-    const response = await fetch(`${API}${path}`, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store" });
+    const response = await fetch(`${API}${path}`, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store", targetAddressSpace: "loopback" });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const detail = payload?.detail;
@@ -75,11 +77,13 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
 
   const checkAgent = useCallback(async () => {
     setAgentChecking(true);
+    setAgentCheckAttempted(true);
     try {
       const response = await fetch(`${API}/health`, {
         mode: "cors",
         credentials: "omit",
         cache: "no-store",
+        targetAddressSpace: "loopback",
       });
       if (!response.ok) {
         throw new Error(`Local Agent health check failed (HTTP ${response.status}).`);
@@ -89,6 +93,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         throw new Error("The NEXORA Local Agent is running but is not ready yet.");
       }
       setAgentReachable(true);
+      setLoopbackPermission("granted");
       const storedToken = sessionStorage.getItem("nexora.local-agent.token");
       if (storedToken) {
         setToken(storedToken);
@@ -97,19 +102,86 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
         setStatus("Local Agent detected. Approve this computer to connect.");
       }
       return true;
-    } catch {
+    } catch (error) {
       setAgentReachable(false);
-      setStatus("Cannot reach 127.0.0.1:8765. The NEXORA Local Agent is not running on this computer.");
+      let permissionState = loopbackPermission;
+      try {
+        if (navigator.permissions?.query) {
+          const permission = await navigator.permissions.query({ name: "loopback-network" });
+          permissionState = permission.state;
+          setLoopbackPermission(permissionState);
+        }
+      } catch {
+        // Older browsers may not expose the granular Loopback Network permission.
+      }
+      setStatus(permissionState === "denied"
+        ? "Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings, then try again."
+        : error?.name === "NotAllowedError"
+          ? "Allow NEXORA to access this computer in the browser permission prompt, then try again."
+          : "Cannot reach 127.0.0.1:8765. The NEXORA Local Agent is not installed or running on this computer.");
       onConnectionChange(false);
       return false;
     } finally {
       setAgentChecking(false);
     }
-  }, [onConnectionChange]);
+  }, [onConnectionChange, loopbackPermission]);
 
   useEffect(() => {
-    // One health probe on mount. No background polling or automatic /pair retries.
-    void checkAgent();
+    let cancelled = false;
+    let permissionStatus = null;
+    const handlePermissionChange = () => {
+      if (cancelled || !permissionStatus) return;
+      const next = permissionStatus.state;
+      setLoopbackPermission(next);
+      if (next === "denied") {
+        setAgentReachable(false);
+        setStatus("Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings.");
+      } else if (next === "granted") {
+        setStatus("Browser permission granted. Select Check connection to detect the Local Agent.");
+      }
+    };
+
+    const inspectPermission = async () => {
+      if (!navigator.permissions?.query) {
+        setLoopbackPermission("prompt");
+        setAgentChecking(false);
+        setStatus("Select Check connection. Your browser may ask you to allow NEXORA to access this computer.");
+        return;
+      }
+      try {
+        permissionStatus = await navigator.permissions.query({ name: "loopback-network" });
+        if (cancelled) return;
+        setLoopbackPermission(permissionStatus.state);
+        permissionStatus.addEventListener?.("change", handlePermissionChange);
+        if (permissionStatus.state === "granted") {
+          // Access was already granted earlier for this website, so the agent
+          // can be detected automatically without another permission prompt.
+          void checkAgent();
+        } else if (permissionStatus.state === "denied") {
+          setAgentChecking(false);
+          setStatus("Browser access to this computer is blocked. Allow Loopback Network access for revelacode.co.ke in the browser's site settings.");
+        } else {
+          // Do not trigger a Local Network Access prompt during page load.
+          // The first request must be initiated by the user's Check connection click.
+          setAgentChecking(false);
+          setStatus("Select Check connection to let your browser ask permission to reach the Local Agent on this PC.");
+        }
+      } catch {
+        // Browsers without the granular permission API still get a user-gesture
+        // request from the Check connection button.
+        if (!cancelled) {
+          setLoopbackPermission("prompt");
+          setAgentChecking(false);
+          setStatus("Select Check connection. Your browser may ask you to allow NEXORA to access this computer.");
+        }
+      }
+    };
+
+    void inspectPermission();
+    return () => {
+      cancelled = true;
+      permissionStatus?.removeEventListener?.("change", handlePermissionChange);
+    };
   }, [checkAgent]);
 
   const pair = async () => {
@@ -249,12 +321,19 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       <button type="button" className={button} disabled={!token} onClick={async()=>{try{await request("/disconnect",{method:"POST"});}catch{}sessionStorage.removeItem("nexora.local-agent.token");setToken("");setDevices([]);setSerial("");setCapabilities(null);setPreflight(null);onConnectionChange(false);setStatus("Local agent disconnected");}}>Disconnect</button>
     </div>
     <p className={"mt-2 text-[11px] " + (agentReachable ? "text-emerald-500" : "text-amber-500")} role="status">{status}</p>
-    {!agentReachable && <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-slate-800 dark:border-amber-800/70 dark:bg-amber-950/20 dark:text-amber-100">
+    {!agentReachable && {!agentReachable && !agentCheckAttempted && loopbackPermission !== "denied" && loopbackPermission !== "checking" && <div className="mt-4 rounded-xl border border-cyan-300 bg-cyan-50 p-3 text-slate-800 dark:border-cyan-800/70 dark:bg-cyan-950/20 dark:text-cyan-100" role="status">
+      <div className="flex items-start gap-2"><ShieldCheck size={16} className="mt-0.5 shrink-0"/><div><h4 className="text-xs font-black">ALLOW LOCAL CONNECTION</h4><p className="mt-1 text-[11px] leading-5">Your browser protects access to software running on your PC. Select <b>Check connection</b> and allow <b>Loopback Network</b> access for revelacode.co.ke if Chrome asks. NEXORA only uses this permission to reach its local companion.</p></div></div>
+    </div>}
+    {loopbackPermission === "denied" && <div className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-3 text-slate-800 dark:border-rose-800/70 dark:bg-rose-950/20 dark:text-rose-100" role="alert">
+      <h4 className="text-xs font-black">BROWSER BLOCKED LOCAL CONNECTION</h4>
+      <p className="mt-1 text-[11px] leading-5">Open the site controls beside the address bar, enter Site settings, set <b>Local network</b> or <b>Loopback network</b> to Allow for revelacode.co.ke, return here and select Check connection.</p>
+    </div>}
+    {agentCheckAttempted && !agentReachable && loopbackPermission !== "denied" && <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-slate-800 dark:border-amber-800/70 dark:bg-amber-950/20 dark:text-amber-100">
       <div className="flex items-start gap-2">
         <AlertTriangle size={16} className="mt-0.5 shrink-0"/>
         <div className="min-w-0">
           <h4 className="text-xs font-black">THE LOCAL AGENT IS NOT RUNNING</h4>
-          <p className="mt-1 text-[11px] leading-5">NEXORA runs production on your own PC. This connection is unavailable because the local companion is not installed or is not running. Install it once; NEXORA will detect it automatically on future visits.</p>
+          <p className="mt-1 text-[11px] leading-5">NEXORA runs production on your own PC. The browser permission is available, but nothing is listening on port 8765. Install the local companion once; NEXORA will detect it automatically on future visits.</p>
           <ol className="mt-2 list-decimal space-y-1 pl-4 text-[11px] leading-5">
             <li>Download and open the NEXORA Local Agent installer on the PC you want to use.</li>
             <li>Complete the normal Windows setup. It includes its own runtime, starts the companion in the background and can start it automatically when you sign in.</li>
