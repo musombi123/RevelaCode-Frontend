@@ -22,6 +22,21 @@ function rpsviStagingOriginIsolation() {
       }
       return transformed === source ? null : { code: transformed, map: null };
     },
+    generateBundle(_options, bundle) {
+      // Final output-boundary guard: strip legacy production origins from
+      // emitted JS/CSS/HTML/assets in this staging mode only.
+      for (const output of Object.values(bundle)) {
+        if (output.type === "chunk") {
+          for (const host of RPSVI_FORBIDDEN_PRODUCTION_HOSTS) {
+            output.code = output.code.replaceAll(host, "");
+          }
+        } else if (typeof output.source === "string") {
+          for (const host of RPSVI_FORBIDDEN_PRODUCTION_HOSTS) {
+            output.source = output.source.replaceAll(host, "");
+          }
+        }
+      }
+    },
   };
 }
 
